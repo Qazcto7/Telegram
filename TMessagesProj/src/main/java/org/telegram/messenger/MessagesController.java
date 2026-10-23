@@ -19269,18 +19269,8 @@ public class MessagesController extends BaseController implements NotificationCe
                     folderUpdates = new ArrayList<>();
                 }
                 folderUpdates.add(update);
-            } else if (baseUpdate instanceof TL_update.TL_updateWebPage) {
-                TL_update.TL_updateWebPage update = (TL_update.TL_updateWebPage) baseUpdate;
-                if (webPages == null) {
-                    webPages = new LongSparseArray<>();
-                }
-                webPages.put(update.webpage.id, update.webpage);
-            } else if (baseUpdate instanceof TL_update.TL_updateChannelWebPage) {
-                TL_update.TL_updateChannelWebPage update = (TL_update.TL_updateChannelWebPage) baseUpdate;
-                if (webPages == null) {
-                    webPages = new LongSparseArray<>();
-                }
-                webPages.put(update.webpage.id, update.webpage);
+            } else if (baseUpdate instanceof TL_update.TL_updateWebPage || baseUpdate instanceof TL_update.TL_updateChannelWebPage) {
+                // Link preview (WebPage) updates are completely disabled
             } else if (baseUpdate instanceof TL_update.TL_updateChannelTooLong) {
                 TL_update.TL_updateChannelTooLong update = (TL_update.TL_updateChannelTooLong) baseUpdate;
                 if (BuildVars.LOGS_ENABLED) {

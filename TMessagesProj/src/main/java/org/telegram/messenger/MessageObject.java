@@ -1922,6 +1922,9 @@ public class MessageObject {
         this.searchType = searchType;
 
         currentAccount = accountNum;
+        if (message != null && message.media instanceof TLRPC.TL_messageMediaWebPage) {
+            message.media = null;
+        }
         messageOwner = message;
         replyMessageObject = replyToMessage;
         eventId = eid;
@@ -6573,6 +6576,9 @@ public class MessageObject {
     }
 
     public static TLRPC.MessageMedia getMedia(TLRPC.Message messageOwner) {
+        if (messageOwner == null || messageOwner.media instanceof TLRPC.TL_messageMediaWebPage) {
+            return null;
+        }
         if (
             messageOwner.media != null &&
             !(messageOwner.media instanceof TLRPC.TL_messageMediaPaidMedia) &&
