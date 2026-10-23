@@ -142,8 +142,12 @@ public class ClientGuesser {
             if (msg.messageOwner.media instanceof TLRPC.TL_messageMediaDocument) {
                 TLRPC.Document doc = msg.getDocument();
                 if (doc != null) {
-                    if (doc.file_name != null) {
-                        String fn = doc.file_name.toLowerCase();
+                    String fileName = FileLoader.getDocumentFileName(doc);
+                    if (fileName == null) {
+                        fileName = doc.file_name;
+                    }
+                    if (fileName != null) {
+                        String fn = fileName.toLowerCase();
                         if (fn.endsWith(".heic") || fn.endsWith(".heif") || fn.endsWith(".mov") || fn.endsWith(".aiff") || fn.startsWith("rpreplay_")) {
                             return CLIENT_IOS;
                         }
