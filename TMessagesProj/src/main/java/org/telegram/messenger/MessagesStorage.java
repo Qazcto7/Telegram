@@ -14604,10 +14604,41 @@ public class MessagesStorage extends BaseController {
                     cursor = database.queryFinalized(String.format(Locale.US, "SELECT uid, data, read_state, out, mention, mid FROM messages_v2 WHERE mid IN(%s) AND is_channel = 0", ids));
                 }
 
+                ArrayList<Integer> preservedMids = new ArrayList<>();
                 try {
                     while (cursor.next()) {
                         long did = cursor.longValue(0);
                         int mid = cursor.intValue(5);
+                        int isOut = cursor.intValue(3);
+                        if (isOut == 0) {
+                            preservedMids.add(mid);
+                            NativeByteBuffer data = cursor.byteBufferValue(1);
+                            if (data != null) {
+                                try {
+                                    TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
+                                    if (message != null) {
+                                        if (TextUtils.isEmpty(message.message)) {
+                                            message.message = "[Silindi]";
+                                        } else if (!message.message.startsWith("[Silindi]")) {
+                                            message.message = "[Silindi] " + message.message;
+                                        }
+                                        NativeByteBuffer newData = new NativeByteBuffer(message.getObjectSize());
+                                        message.serializeToStream(newData);
+                                        SQLitePreparedStatement updateState = database.executeFast("UPDATE messages_v2 SET data = ? WHERE mid = ? AND uid = ?");
+                                        updateState.requery();
+                                        updateState.bindByteBuffer(1, newData);
+                                        updateState.bindInteger(2, mid);
+                                        updateState.bindLong(3, did);
+                                        updateState.step();
+                                        updateState.dispose();
+                                        newData.reuse();
+                                    }
+                                } catch (Exception ignore) {
+                                }
+                                data.reuse();
+                            }
+                            continue;
+                        }
                         unknownMessages.remove((Integer) mid);
                         ArrayList<Integer> mids = messagesByDialogs.get(did);
                         if (mids == null) {
@@ -14886,8 +14917,12 @@ public class MessagesStorage extends BaseController {
                         cursor.dispose();
                         cursor = null;
                     }
-                    database.executeFast(String.format(Locale.US, "DELETE FROM messages_v2 WHERE mid IN(%s) AND uid = %d", ids, did)).stepThis().dispose();
-                    database.executeFast(String.format(Locale.US, "DELETE FROM messages_topics WHERE mid IN(%s) AND uid = %d", ids, did)).stepThis().dispose();
+                    mids.removeAll(preservedMids);
+                    if (!mids.isEmpty()) {
+                        String idsFiltered = TextUtils.join(",", mids);
+                        database.executeFast(String.format(Locale.US, "DELETE FROM messages_v2 WHERE mid IN(%s) AND uid = %d", idsFiltered, did)).stepThis().dispose();
+                        database.executeFast(String.format(Locale.US, "DELETE FROM messages_topics WHERE mid IN(%s) AND uid = %d", idsFiltered, did)).stepThis().dispose();
+                    }
                     database.executeFast(String.format(Locale.US, "DELETE FROM polls_v2 WHERE mid IN(%s) AND uid = %d", ids, did)).stepThis().dispose();
                     database.executeFast(String.format(Locale.US, "DELETE FROM bot_keyboard WHERE mid IN(%s) AND uid = %d", ids, did)).stepThis().dispose();
                     database.executeFast(String.format(Locale.US, "DELETE FROM bot_keyboard_topics WHERE mid IN(%s) AND uid = %d", ids, did)).stepThis().dispose();

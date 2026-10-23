@@ -26453,6 +26453,22 @@ public class ChatActivity extends BaseFragment implements
                 updateReplyMessageOwners(mid, null);
             }
             if (obj != null) {
+                if (!obj.isOut()) {
+                    obj.deleted = true;
+                    if (obj.messageOwner != null) {
+                        if (TextUtils.isEmpty(obj.messageOwner.message)) {
+                            obj.messageOwner.message = "[Silindi]";
+                        } else if (!obj.messageOwner.message.startsWith("[Silindi]")) {
+                            obj.messageOwner.message = "[Silindi] " + obj.messageOwner.message;
+                        }
+                        obj.applyNewText();
+                    }
+                    int index = chatAdapter != null && chatAdapter.isFiltered && filteredMessagesDict != null ? chatAdapter.filteredMessages.indexOf(filteredMessagesDict.get(mid)) : messages.indexOf(obj);
+                    if (index != -1 && chatAdapter != null) {
+                        chatAdapter.notifyItemChanged(chatAdapter.messagesStartRow + index);
+                    }
+                    continue;
+                }
                 if (obj.messageOwner.reply_to != null && !(obj.messageOwner.action instanceof TLRPC.TL_messageActionPinMessage)) {
                     int replyId = obj.getReplyAnyMsgId();
                     if (threadMessageObject != null && threadMessageObject.getId() == replyId) {

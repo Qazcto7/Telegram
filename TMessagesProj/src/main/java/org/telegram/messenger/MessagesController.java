@@ -6683,36 +6683,23 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isChatNoForwards(TLRPC.Chat chat) {
-        if (chat == null) {
-            return false;
-        }
-        if (chat.migrated_to != null) {
-            TLRPC.Chat migratedTo = getChat(chat.migrated_to.channel_id);
-            if (migratedTo != null) {
-                return migratedTo.noforwards;
-            }
-        }
-        return chat.noforwards;
+        return false;
     }
 
     public boolean isChatNoForwards(long chatId) {
-        return isChatNoForwards(getChat(chatId));
+        return false;
     }
 
     public boolean isPeerNoForwards(long dialogId) {
-        return dialogId > 0 ? isUserNoForwards(dialogId) : isChatNoForwards(-dialogId);
+        return false;
     }
 
     public boolean isUserNoForwards(long userId) {
-        return isUserNoForwards(getUserFull(userId));
+        return false;
     }
 
     public boolean isUserNoForwards(TLRPC.UserFull userFull) {
-        if (userFull == null) {
-            return false;
-        }
-
-        return userFull.noforwards_peer_enabled || userFull.noforwards_my_enabled;
+        return false;
     }
 
     public TLRPC.User getUser(Long id) {
@@ -11363,113 +11350,11 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean sendTyping(long dialogId, long threadMsgId, int action, int classGuid) {
-        return sendTyping(dialogId, threadMsgId, action, null, classGuid);
+        return false;
     }
 
     public boolean sendTyping(long dialogId, long threadMsgId, int action, String emojicon, int classGuid) {
-        if (action < 0 || action >= sendingTypings.length || dialogId == 0) {
-            return false;
-        }
-        final long selfId = UserConfig.getInstance(UserConfig.selectedAccount).getClientUserId();
-        if (dialogId == selfId) {
-            return false;
-        }
-        if (dialogId < 0) {
-            if (ChatObject.getSendAsPeerId(getChat(-dialogId), getChatFull(-dialogId)) != selfId) {
-                return false;
-            }
-        } else {
-            TLRPC.User user = getUser(dialogId);
-            if (user != null) {
-                if (user.id == getUserConfig().getClientUserId()) {
-                    return false;
-                }
-                if (user.status != null && user.status.expires != -100 && !onlinePrivacy.containsKey(user.id)) {
-                    int time = getConnectionsManager().getCurrentTime();
-                    if (user.status.expires <= time - 30) {
-                        return false;
-                    }
-                }
-            }
-        }
-        LongSparseArray<LongSparseArray<Boolean>> dialogs = sendingTypings[action];
-        if (dialogs == null) {
-            dialogs = sendingTypings[action] = new LongSparseArray<>();
-        }
-        LongSparseArray<Boolean> threads = dialogs.get(dialogId);
-        if (threads == null) {
-            dialogs.put(dialogId, threads = new LongSparseArray<>());
-        }
-        if (threads.get(threadMsgId) != null) {
-            return false;
-        }
-        if (!DialogObject.isEncryptedDialog(dialogId)) {
-            TLRPC.TL_messages_setTyping req = new TLRPC.TL_messages_setTyping();
-            if (threadMsgId != 0) {
-                req.top_msg_id = (int) threadMsgId;
-                req.flags |= 1;
-            }
-            req.peer = getInputPeer(dialogId);
-            if (req.peer instanceof TLRPC.TL_inputPeerChannel) {
-                TLRPC.Chat chat = getChat(req.peer.channel_id);
-                if (chat == null || !chat.megagroup) {
-                    return false;
-                }
-            }
-            if (req.peer == null) {
-                return false;
-            }
-            if (action == 0) {
-                req.action = new TLRPC.TL_sendMessageTypingAction();
-            } else if (action == 1) {
-                req.action = new TLRPC.TL_sendMessageRecordAudioAction();
-            } else if (action == 2) {
-                req.action = new TLRPC.TL_sendMessageCancelAction();
-            } else if (action == 3) {
-                req.action = new TLRPC.TL_sendMessageUploadDocumentAction();
-            } else if (action == 4) {
-                req.action = new TLRPC.TL_sendMessageUploadPhotoAction();
-            } else if (action == 5) {
-                req.action = new TLRPC.TL_sendMessageUploadVideoAction();
-            } else if (action == 6) {
-                req.action = new TLRPC.TL_sendMessageGamePlayAction();
-            } else if (action == 7) {
-                req.action = new TLRPC.TL_sendMessageRecordRoundAction();
-            } else if (action == 8) {
-                req.action = new TLRPC.TL_sendMessageUploadRoundAction();
-            } else if (action == 9) {
-                req.action = new TLRPC.TL_sendMessageUploadAudioAction();
-            } else if (action == 10) {
-                req.action = new TLRPC.TL_sendMessageChooseStickerAction();
-            } else if (action == 11) {
-                TLRPC.TL_sendMessageEmojiInteractionSeen interactionSeen = new TLRPC.TL_sendMessageEmojiInteractionSeen();
-                interactionSeen.emoticon = emojicon;
-                req.action = interactionSeen;
-            }
-            threads.put(threadMsgId, true);
-            int reqId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> cancelTyping(action, dialogId, threadMsgId)), ConnectionsManager.RequestFlagFailOnServerErrors);
-            if (classGuid != 0) {
-                getConnectionsManager().bindRequestToGuid(reqId, classGuid);
-            }
-        } else {
-            if (action != 0) {
-                return false;
-            }
-            TLRPC.EncryptedChat chat = getEncryptedChat(DialogObject.getEncryptedChatId(dialogId));
-            if (chat.auth_key != null && chat.auth_key.length > 1 && chat instanceof TLRPC.TL_encryptedChat) {
-                TLRPC.TL_messages_setEncryptedTyping req = new TLRPC.TL_messages_setEncryptedTyping();
-                req.peer = new TLRPC.TL_inputEncryptedChat();
-                req.peer.chat_id = chat.id;
-                req.peer.access_hash = chat.access_hash;
-                req.typing = true;
-                threads.put(threadMsgId, true);
-                int reqId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> cancelTyping(action, dialogId, threadMsgId)), ConnectionsManager.RequestFlagFailOnServerErrors);
-                if (classGuid != 0) {
-                    getConnectionsManager().bindRequestToGuid(reqId, classGuid);
-                }
-            }
-        }
-        return true;
+        return false;
     }
 
     protected void removeDeletedMessagesFromArray(final long dialogId, ArrayList<TLRPC.Message> messages) {
@@ -14570,26 +14455,20 @@ public class MessagesController extends BaseController implements NotificationCe
                 request.max_id = task.maxId;
                 req = request;
             }
-            getConnectionsManager().sendRequest(req, (response, error) -> {
-                if (error == null) {
-                    if (response instanceof TLRPC.TL_messages_affectedMessages) {
-                        TLRPC.TL_messages_affectedMessages res = (TLRPC.TL_messages_affectedMessages) response;
-                        processNewDifferenceParams(-1, res.pts, -1, res.pts_count);
-                    }
-                }
-            });
-        } else {
-            TLRPC.EncryptedChat chat = getEncryptedChat(DialogObject.getEncryptedChatId(task.dialogId));
-            if (chat.auth_key != null && chat.auth_key.length > 1 && chat instanceof TLRPC.TL_encryptedChat) {
-                TLRPC.TL_messages_readEncryptedHistory req = new TLRPC.TL_messages_readEncryptedHistory();
-                req.peer = new TLRPC.TL_inputEncryptedChat();
-                req.peer.chat_id = chat.id;
-                req.peer.access_hash = chat.access_hash;
-                req.max_date = task.maxDate;
+            if (inputPeer instanceof TLRPC.TL_inputPeerChannel) {
                 getConnectionsManager().sendRequest(req, (response, error) -> {
-
+                    if (error == null) {
+                        if (response instanceof TLRPC.TL_messages_affectedMessages) {
+                            TLRPC.TL_messages_affectedMessages res = (TLRPC.TL_messages_affectedMessages) response;
+                            processNewDifferenceParams(-1, res.pts, -1, res.pts_count);
+                        }
+                    }
                 });
+            } else {
+                // Ghost Read: Do not send readHistory request to server for private/group chats
             }
+        } else {
+            // Ghost Read: Do not send readEncryptedHistory for secret chats
         }
     }
 
@@ -21642,6 +21521,10 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public SponsoredMessagesInfo getSponsoredMessages(long dialogId) {
+        return null;
+    }
+
+    private SponsoredMessagesInfo getSponsoredMessagesInternal(long dialogId) {
         SponsoredMessagesInfo info = sponsoredMessages.get(dialogId);
         if (info != null && (info.loading || Math.abs(SystemClock.elapsedRealtime() - info.loadTime) <= 5 * 60 * 1000)) {
             return info;
