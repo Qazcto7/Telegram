@@ -13552,7 +13552,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                                     }
                                 }
                             }
-                            value = LocaleController.getString(R.string.Username) + " • ID: " + (userId != 0 ? userId : chatId);
+                            value = LocaleController.getString(R.string.Username) + getAccountDetails(userId != 0 ? userId : chatId, user);
                             if (username != null) {
                                 text = "@" + username;
                                 if (usernameObj != null && !usernameObj.editable) {
@@ -13659,7 +13659,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     if (position == userInfoRow) {
                         TLRPC.User user = userInfo.user != null ? userInfo.user : getMessagesController().getUser(userInfo.id);
                         boolean addlinks = isBot || (user != null && user.premium && userInfo.about != null);
-                        aboutLinkCell.setTextAndValue(userInfo.about, LocaleController.getString(R.string.UserBio) + " • ID: " + (user != null ? user.id : userId), addlinks);
+                        aboutLinkCell.setTextAndValue(userInfo.about, LocaleController.getString(R.string.UserBio) + getAccountDetails(user != null ? user.id : userId, user), addlinks);
                     } else if (position == channelInfoRow) {
                         String text = chatInfo.about;
                         while (text.contains("\n\n\n")) {
@@ -16989,5 +16989,36 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         public void updateColors() {
             setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText, resourcesProvider));
         }
+    }
+
+    private String getAccountDetails(long targetId, TLRPC.User user) {
+        if (targetId <= 0) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(" • ID: ").append(targetId);
+        int dc = 0;
+        if (user != null && user.photo != null) {
+            dc = user.photo.dc_id;
+        }
+        if (dc != 0) {
+            sb.append(" • DC: ").append(dc);
+        }
+        if (userId != 0) {
+            String est;
+            if (targetId < 50000000L) est = "2013-2014";
+            else if (targetId < 100000000L) est = "~2015";
+            else if (targetId < 250000000L) est = "~2016";
+            else if (targetId < 450000000L) est = "~2017";
+            else if (targetId < 750000000L) est = "~2018";
+            else if (targetId < 1000000000L) est = "~2019";
+            else if (targetId < 1400000000L) est = "~2020";
+            else if (targetId < 2000000000L) est = "~2021";
+            else if (targetId < 5300000000L) est = "~2022-2023";
+            else if (targetId < 6800000000L) est = "~2023-2024";
+            else est = "~2025-2026";
+            sb.append(" • Kayıt: ").append(est);
+        }
+        return sb.toString();
     }
 }

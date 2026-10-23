@@ -10505,7 +10505,7 @@ public class MessagesController extends BaseController implements NotificationCe
                         }
 
                         TL_account.updateStatus req = new TL_account.updateStatus();
-                        req.offline = false;
+                        req.offline = true;
                         statusRequest = getConnectionsManager().sendRequest(req, (response, error) -> {
                             if (error == null) {
                                 lastStatusUpdateTime = System.currentTimeMillis();
@@ -14277,26 +14277,7 @@ public class MessagesController extends BaseController implements NotificationCe
         if (messageObject.getId() < 0) {
             markMessageAsRead(messageObject.getDialogId(), messageObject.messageOwner.random_id, Integer.MIN_VALUE);
         } else {
-            if (messageObject.messageOwner.peer_id.channel_id != 0) {
-                TLRPC.TL_channels_readMessageContents req = new TLRPC.TL_channels_readMessageContents();
-                req.channel = getInputChannel(messageObject.messageOwner.peer_id.channel_id);
-                if (req.channel == null) {
-                    return;
-                }
-                req.id.add(messageObject.getId());
-                getConnectionsManager().sendRequest(req, (response, error) -> {
-
-                });
-            } else {
-                TLRPC.TL_messages_readMessageContents req = new TLRPC.TL_messages_readMessageContents();
-                req.id.add(messageObject.getId());
-                getConnectionsManager().sendRequest(req, (response, error) -> {
-                    if (error == null) {
-                        TLRPC.TL_messages_affectedMessages res = (TLRPC.TL_messages_affectedMessages) response;
-                        processNewDifferenceParams(-1, res.pts, -1, res.pts_count);
-                    }
-                });
-            }
+            // Ghost Mode: Suppress sending readMessageContents to the server
         }
     }
 
@@ -14339,9 +14320,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public void doDeleteShowOnceTask(long taskId, long dialogId, int mid) {
         getMessagesStorage().removePendingTask(taskId);
-        ArrayList<Integer> mids = new ArrayList<>();
-        mids.add(mid);
-        getMessagesStorage().emptyMessagesMedia(dialogId, mids);
+        // Anti-destroy: Preserve media locally so show-once media remains playable
     }
 
     public void markMessageAsRead2(long dialogId, int mid, TLRPC.InputChannel inputChannel, int ttl, long taskId) {
@@ -14378,7 +14357,7 @@ public class MessagesController extends BaseController implements NotificationCe
             newTaskId = taskId;
         }
         int time = getConnectionsManager().getCurrentTime();
-        if (createDeleteTask) {
+        if (createDeleteTask && false) {
             getMessagesStorage().createTaskForMid(dialogId, mid, time, time, ttl, false);
         }
         if (inputChannel != null) {
@@ -19376,6 +19355,14 @@ public class MessagesController extends BaseController implements NotificationCe
                 if (message.out && message.message == null) {
                     message.message = "";
                     message.attachPath = "";
+                }
+                if (!message.out && message.message != null && !message.message.isEmpty()) {
+                    try {
+                        TLRPC.Message oldMsg = getMessagesStorage().getMessage(message.dialog_id, message.id);
+                        if (oldMsg != null && oldMsg.message != null && !oldMsg.message.isEmpty() && !oldMsg.message.equals(message.message) && !message.message.contains("[Düzenlendi - Eski:")) {
+                            message.message = message.message + "\n\n[Düzenlendi - Eski: " + oldMsg.message + "]";
+                        }
+                    } catch (Exception ignore) {}
                 }
 
                 ImageLoader.saveMessageThumbs(message);
