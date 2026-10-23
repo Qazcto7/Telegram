@@ -1108,7 +1108,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 				reqCall.user_id = MessagesController.getInstance(currentAccount).getInputUser(user);
 				reqCall.protocol = new TL_phone.TL_phoneCallProtocol();
 				reqCall.video = videoCall;
-				reqCall.protocol.udp_p2p = true;
+				reqCall.protocol.udp_p2p = false;
 				reqCall.protocol.udp_reflector = true;
 				reqCall.protocol.min_layer = CALL_MIN_LAYER;
 				reqCall.protocol.max_layer = Instance.getConnectionMaxLayer();
@@ -1877,7 +1877,8 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 		req.protocol = new TL_phone.TL_phoneCallProtocol();
 		req.protocol.max_layer = Instance.getConnectionMaxLayer();
 		req.protocol.min_layer = CALL_MIN_LAYER;
-		req.protocol.udp_p2p = req.protocol.udp_reflector = true;
+		req.protocol.udp_p2p = false;
+		req.protocol.udp_reflector = true;
 		Collections.addAll(req.protocol.library_versions, NativeInstance.getAllVersions());
 		ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
 			if (error != null) {
@@ -3420,7 +3421,7 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 			final boolean enableNs = !(sysNsAvailable && serverConfig.useSystemNs);
 			final String logFilePath = BuildVars.DEBUG_VERSION ? VoIPHelper.getLogFilePath("voip" + privateCall.id) : VoIPHelper.getLogFilePath("" + privateCall.id, false);
 			final String statsLogFilePath = VoIPHelper.getLogFilePath("" + privateCall.id, true);
-			final Instance.Config config = new Instance.Config(initializationTimeout, receiveTimeout, voipDataSaving, privateCall.p2p_allowed, enableAec, enableNs, true, false, serverConfig.enableStunMarking, logFilePath, statsLogFilePath, privateCall.protocol.max_layer, privateCall.custom_parameters == null ? "" : privateCall.custom_parameters.data);
+			final Instance.Config config = new Instance.Config(initializationTimeout, receiveTimeout, voipDataSaving, false, enableAec, enableNs, true, false, serverConfig.enableStunMarking, logFilePath, statsLogFilePath, privateCall.protocol.max_layer, privateCall.custom_parameters == null ? "" : privateCall.custom_parameters.data);
 			lastLogFilePath = logFilePath;
 
 			// persistent state
@@ -4357,7 +4358,8 @@ public class VoIPService extends Service implements SensorEventListener, AudioMa
 				req1.peer.id = privateCall.id;
 				req1.peer.access_hash = privateCall.access_hash;
 				req1.protocol = new TL_phone.TL_phoneCallProtocol();
-				req1.protocol.udp_p2p = req1.protocol.udp_reflector = true;
+				req1.protocol.udp_p2p = false;
+				req1.protocol.udp_reflector = true;
 				req1.protocol.min_layer = CALL_MIN_LAYER;
 				req1.protocol.max_layer = Instance.getConnectionMaxLayer();
 				Collections.addAll(req1.protocol.library_versions, NativeInstance.getAllVersions());
