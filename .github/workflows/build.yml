@@ -23,17 +23,28 @@ jobs:
           java-version: '21'
           cache: 'gradle'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Setup Android SDK & NDK
+        run: |
+          SDKMANAGER=$(which sdkmanager || echo "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager")
+          yes | "$SDKMANAGER" --licenses || true
+          "$SDKMANAGER" "ndk;27.2.12479018" "platforms;android-36" "build-tools;36.0.0" || true
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          if [ -d "$ANDROID_HOME/ndk/27.2.12479018" ]; then
+            echo "ndk.dir=$ANDROID_HOME/ndk/27.2.12479018" >> local.properties
+          fi
+          cat local.properties
 
       - name: Make Gradlew Executable
         run: chmod +x ./gradlew
 
-      - name: Build APK (AfatDebug)
-        run: ./gradlew assembleAfatDebug --no-daemon --stacktrace
+      - name: Build APK
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Telegram-Custom-APK
-          path: TMessagesProj/build/outputs/apk/afat/debug/*.apk
+          path: |
+            TMessagesProj_App/build/outputs/apk/debug/*.apk
+            **/build/outputs/apk/**/*.apk
+          if-no-files-found: warn
