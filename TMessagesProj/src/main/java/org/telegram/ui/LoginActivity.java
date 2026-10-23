@@ -768,8 +768,12 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         proxyButtonView = new ImageView(context);
         proxyButtonView.setImageDrawable(proxyDrawable = new ProxyDrawable(context));
         proxyButtonView.setOnClickListener(v -> presentFragment(new ProxyListActivity()));
-        proxyButtonView.setAlpha(0f);
-        proxyButtonView.setVisibility(View.GONE);
+        proxyButtonView.setOnLongClickListener(v -> {
+            showCustomApiDialog();
+            return true;
+        });
+        proxyButtonView.setAlpha(1f);
+        proxyButtonView.setVisibility(View.VISIBLE);
         sizeNotifierFrameLayout.addView(proxyButtonView, LayoutHelper.createFrame(32, 32, Gravity.RIGHT | Gravity.TOP, 16, 16, 16, 16));
         updateProxyButton(false, true);
 
@@ -3235,6 +3239,8 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString("CodeExpired", R.string.CodeExpired));
                         } else if (error.text.startsWith("FLOOD_WAIT")) {
                             needShowAlert(getString(R.string.RestorePasswordNoEmailTitle), getString("FloodWait", R.string.FloodWait));
+                        } else if (error.text.contains("API_ID_PUBLISHED_FLOOD") || error.text.contains("API_ID_INVALID")) {
+                            showCustomApiDialog();
                         } else if (error.code != -1000) {
                             AlertsCreator.processError(currentAccount, error, LoginActivity.this, req, phoneInputData.phoneNumber);
                         }
@@ -8555,6 +8561,54 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
         showDialog(builder.create());
     }
 
+    public void showCustomApiDialog() {
+        if (getParentActivity() == null) {
+            return;
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+        builder.setTitle("Telegram API Bilgileri");
+
+        LinearLayout layout = new LinearLayout(getParentActivity());
+        layout.setOrientation(LinearLayout.VERTICAL);
+        layout.setPadding(AndroidUtilities.dp(24), AndroidUtilities.dp(16), AndroidUtilities.dp(24), AndroidUtilities.dp(16));
+
+        TextView infoText = new TextView(getParentActivity());
+        infoText.setText("Telegram sunucuları genel API anahtarını sınırlandırdı (API_ID_PUBLISHED_FLOOD).\n\nmy.telegram.org adresinden alabileceğiniz kendi API ID ve Hash bilgilerinizi aşağıya girebilirsiniz:");
+        infoText.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
+        infoText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+        layout.addView(infoText);
+
+        final EditTextBoldCursor idField = new EditTextBoldCursor(getParentActivity());
+        idField.setHint("API ID (örn. 21724)");
+        idField.setInputType(InputType.TYPE_CLASS_NUMBER);
+        idField.setText(BuildVars.APP_ID > 0 ? String.valueOf(BuildVars.APP_ID) : "");
+        layout.addView(idField, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 12, 0, 8));
+
+        final EditTextBoldCursor hashField = new EditTextBoldCursor(getParentActivity());
+        hashField.setHint("API HASH (32 haneli)");
+        hashField.setInputType(InputType.TYPE_CLASS_TEXT);
+        hashField.setText(BuildVars.APP_HASH != null ? BuildVars.APP_HASH : "");
+        layout.addView(hashField, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 4, 0, 8));
+
+        builder.setView(layout);
+        builder.setPositiveButton("Kaydet ve Yeniden Dene", (dialog, which) -> {
+            try {
+                String idStr = idField.getText().toString().trim();
+                String hashStr = hashField.getText().toString().trim();
+                if (!TextUtils.isEmpty(idStr) && !TextUtils.isEmpty(hashStr)) {
+                    int newId = Integer.parseInt(idStr);
+                    BuildVars.saveCustomApiCredentials(newId, hashStr);
+                    ConnectionsManager.getInstance(currentAccount).cleanup(true);
+                    onDoneButtonPressed();
+                }
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+        builder.setNegativeButton(getString("Cancel", R.string.Cancel), null);
+        showDialog(builder.create());
+    }
+
     private final static class PhoneNumberConfirmView extends FrameLayout {
         private IConfirmDialogCallback callback;
         private ViewGroup fragmentView;
@@ -8799,7 +8853,7 @@ public class LoginActivity extends BaseFragment implements NotificationCenter.No
             proxyDrawable.setConnected(true, connected, animated);
             showProxyButtonDelayed();
         } else {
-            showProxyButton(false, animated);
+            showProxyButton(true, animated);
         }
     }
     

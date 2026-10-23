@@ -5,6 +5,9 @@ on:
     branches: [ master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -48,11 +51,35 @@ jobs:
       - name: Build APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace -Dorg.gradle.jvmargs="-Xmx6g -XX:+UseG1GC"
 
-      - name: Upload APK
+      - name: Prepare APK for Direct Download
+        run: |
+          mkdir -p release_apk
+          APK_PATH=$(find TMessagesProj_App/build/outputs/apk -name "*.apk" ! -name "*unaligned*" | head -n 1)
+          if [ -z "$APK_PATH" ]; then
+            APK_PATH=$(find . -name "*.apk" ! -name "*unaligned*" | head -n 1)
+          fi
+          echo "Found APK: $APK_PATH"
+          cp "$APK_PATH" release_apk/Telegram-Custom.apk
+          ls -lh release_apk/Telegram-Custom.apk
+
+      - name: Publish Direct APK to GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/master'
+        with:
+          tag_name: latest
+          name: "Telegram Custom APK (Doğrudan İndirme)"
+          body: |
+            ### 🚀 Telegram Custom APK Doğrudan İndirme
+            Zip açmaya gerek kalmadan doğrudan cihazınıza yükleyin:
+            - **[Telegram-Custom.apk](https://github.com/${{ github.repository }}/releases/download/latest/Telegram-Custom.apk)**
+          files: release_apk/Telegram-Custom.apk
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload APK as Workflow Artifact
         uses: actions/upload-artifact@v7
         with:
           name: Telegram-Custom-APK
-          path: |
-            TMessagesProj_App/build/outputs/apk/debug/*.apk
-            **/build/outputs/apk/**/*.apk
+          path: release_apk/Telegram-Custom.apk
           if-no-files-found: warn

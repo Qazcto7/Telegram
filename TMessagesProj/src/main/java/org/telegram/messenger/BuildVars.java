@@ -26,8 +26,8 @@ public class BuildVars {
     public static boolean NO_SCOPED_STORAGE = Build.VERSION.SDK_INT <= 29;
     public static String BUILD_VERSION_STRING = BuildConfig.BUILD_VERSION_STRING;
 
-    public static int APP_ID = 4;
-    public static String APP_HASH = "014b35b6184100b085b0d0572f9b5103";
+    public static int APP_ID = 21724;
+    public static String APP_HASH = "3e0cb5efcd52300aec5994fdfc5bdc16";
 
     // SafetyNet key for Google Identity SDK, set it to empty to disable
     public static String SAFETYNET_KEY = "AIzaSyDqt8P-7F7CPCseMkOiVRgb1LY8RN1bvH8";
@@ -43,10 +43,34 @@ public class BuildVars {
     // works only on official app ids, disable on your forks
     public static boolean SUPPORTS_PASSKEYS = true;
 
-    static {
+    public static void loadConfig() {
         if (ApplicationLoader.applicationContext != null) {
             SharedPreferences sharedPreferences = ApplicationLoader.applicationContext.getSharedPreferences("systemConfig", Context.MODE_PRIVATE);
             LOGS_ENABLED = DEBUG_VERSION || sharedPreferences.getBoolean("logsEnabled", DEBUG_VERSION);
+            int customAppId = sharedPreferences.getInt("custom_app_id", 0);
+            String customAppHash = sharedPreferences.getString("custom_app_hash", null);
+            if (customAppId != 0 && customAppHash != null && !customAppHash.isEmpty()) {
+                APP_ID = customAppId;
+                APP_HASH = customAppHash;
+            }
+        }
+    }
+
+    public static void saveCustomApiCredentials(int appId, String appHash) {
+        APP_ID = appId;
+        APP_HASH = appHash;
+        if (ApplicationLoader.applicationContext != null) {
+            SharedPreferences sharedPreferences = ApplicationLoader.applicationContext.getSharedPreferences("systemConfig", Context.MODE_PRIVATE);
+            sharedPreferences.edit()
+                .putInt("custom_app_id", appId)
+                .putString("custom_app_hash", appHash)
+                .apply();
+        }
+    }
+
+    static {
+        loadConfig();
+        if (ApplicationLoader.applicationContext != null) {
             if (LOGS_ENABLED) {
                 final Thread.UncaughtExceptionHandler pastHandler = Thread.getDefaultUncaughtExceptionHandler();
                 Thread.setDefaultUncaughtExceptionHandler((thread, exception) -> {

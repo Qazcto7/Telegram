@@ -289,6 +289,7 @@ public class ApplicationLoader extends Application {
         }
 
         super.onCreate();
+        BuildVars.loadConfig();
 
         // AndroidUtilities must be initialized before FileLog
         final String helloWorld = AndroidUtilities.getHelloWorld();
