@@ -1511,7 +1511,7 @@ public class SharedConfig {
     }
 
     public static boolean isProxyEnabled() {
-        return MessagesController.getGlobalMainSettings().getBoolean("proxy_enabled", false) && currentProxy != null;
+        return currentProxy != null || MessagesController.getGlobalMainSettings().getBoolean("proxy_enabled", false);
     }
 
     public static void deleteProxy(ProxyInfo proxyInfo) {

@@ -988,6 +988,9 @@ public class ConnectionsManager extends BaseController {
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
             if (enabled && settings != null && settings.isValid()) {
                 native_setProxySettings(a, address, port, username, password, secret);
+            } else if (SharedConfig.currentProxy != null && SharedConfig.currentProxy.settings != null && SharedConfig.currentProxy.settings.isValid()) {
+                ProxySettings ps = SharedConfig.currentProxy.settings;
+                native_setProxySettings(a, ps.getAddress(), ps.getPort(), ps.getUser(), ps.getPassword(), ps.getSecret());
             } else {
                 native_setProxySettings(a, "", 1080, "", "", "");
             }
