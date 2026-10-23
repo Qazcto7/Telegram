@@ -325,6 +325,10 @@ public class SharedConfig {
     public static boolean stripMediaMetadata = true;
     public static boolean forwardWithoutAuthors = true;
     public static boolean invisibleVoiceListening = true;
+    public static boolean antiTtl = true;
+    public static boolean ghostStories = true;
+    public static boolean silentScreenshot = true;
+    public static boolean freezeLastSeen = true;
     public static int messageSeenHintCount;
     public static int emojiInteractionsHintCount;
     public static int dayNightThemeSwitchHintCount;
@@ -480,6 +484,10 @@ public class SharedConfig {
                 editor.putBoolean("stripMediaMetadata", stripMediaMetadata);
                 editor.putBoolean("forwardWithoutAuthors", forwardWithoutAuthors);
                 editor.putBoolean("invisibleVoiceListening", invisibleVoiceListening);
+                editor.putBoolean("antiTtl", antiTtl);
+                editor.putBoolean("ghostStories", ghostStories);
+                editor.putBoolean("silentScreenshot", silentScreenshot);
+                editor.putBoolean("freezeLastSeen", freezeLastSeen);
 
                 if (pendingAppUpdate != null) {
                     try {
@@ -552,6 +560,10 @@ public class SharedConfig {
             stripMediaMetadata = preferences.getBoolean("stripMediaMetadata", true);
             forwardWithoutAuthors = preferences.getBoolean("forwardWithoutAuthors", true);
             invisibleVoiceListening = preferences.getBoolean("invisibleVoiceListening", true);
+            antiTtl = preferences.getBoolean("antiTtl", true);
+            ghostStories = preferences.getBoolean("ghostStories", true);
+            silentScreenshot = preferences.getBoolean("silentScreenshot", true);
+            freezeLastSeen = preferences.getBoolean("freezeLastSeen", true);
             String authKeyString = preferences.getString("pushAuthKey", null);
             if (!TextUtils.isEmpty(authKeyString)) {
                 pushAuthKey = Base64.decode(authKeyString, Base64.DEFAULT);

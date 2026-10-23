@@ -1248,6 +1248,7 @@ public class ChatActivity extends BaseFragment implements
     public final static int OPTION_EDIT_SCHEDULE_TIME = 102;
     public final static int OPTION_SPEED_PROMO = 103;
     public final static int OPTION_OPEN_PROFILE = 104;
+    public final static int OPTION_VIEW_EDIT_HISTORY = 199;
     public final static int OPTION_FACT_CHECK = 106;
     public final static int OPTION_EDIT_PRICE = 107;
     public final static int OPTION_GIFT = 108;
@@ -15656,7 +15657,7 @@ public class ChatActivity extends BaseFragment implements
     }
 
     private Runnable sendSecretMediaDelete(MessageObject messageObject) {
-        if (messageObject == null || messageObject.isOut() || !messageObject.isSecretMedia() || messageObject.messageOwner.ttl != 0x7FFFFFFF) {
+        if (messageObject == null || messageObject.isOut() || !messageObject.isSecretMedia() || messageObject.messageOwner.ttl != 0x7FFFFFFF || SharedConfig.antiTtl) {
             return null;
         }
         final long taskId = getMessagesController().createDeleteShowOnceTask(dialog_id, messageObject.getId());
@@ -33913,6 +33914,13 @@ public class ChatActivity extends BaseFragment implements
                 selectedObjectToEditCaption = null;
                 break;
             }
+            case OPTION_VIEW_EDIT_HISTORY: {
+                showEditHistoryDialog(selectedObject);
+                selectedObject = null;
+                selectedObjectGroup = null;
+                selectedObjectToEditCaption = null;
+                break;
+            }
             case OPTION_EDIT_PRICE: {
                 final MessageObject msg = selectedObject;
                 TLRPC.TL_messageMediaPaidMedia paidMedia = (TLRPC.TL_messageMediaPaidMedia) selectedObject.messageOwner.media;
@@ -34444,6 +34452,47 @@ public class ChatActivity extends BaseFragment implements
         selectedObjectGroup = null;
         selectedObjectToEditCaption = null;
         closeMenu(!preserveDim);
+    }
+
+    private void showEditHistoryDialog(MessageObject msg) {
+        if (msg == null || msg.messageOwner == null || getParentActivity() == null) {
+            return;
+        }
+        String fullText = msg.messageOwner.message != null ? msg.messageOwner.message : "";
+        String currentText = fullText;
+        String originalText = "";
+        int editIndex = fullText.indexOf("✏️ [Eski: ");
+        if (editIndex >= 0) {
+            currentText = fullText.substring(0, editIndex).trim();
+            int endIndex = fullText.lastIndexOf("]");
+            if (endIndex > editIndex + 10) {
+                originalText = fullText.substring(editIndex + 10, endIndex).trim();
+            } else {
+                originalText = fullText.substring(editIndex + 10).trim();
+            }
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("📌 Güncel Metin:\n").append(currentText).append("\n\n");
+        if (!originalText.isEmpty()) {
+            sb.append("🕒 Orijinal / Önceki Metin:\n").append(originalText);
+        } else {
+            sb.append("🕒 Orijinal Metin:\n(Önceki metin bu oturumda kaydedilmemiş)");
+        }
+        if (msg.messageOwner.edit_date != 0) {
+            sb.append("\n\n📅 Düzenlenme Tarihi: ").append(LocaleController.formatDateChat(msg.messageOwner.edit_date));
+        }
+
+        final String copyTarget = !originalText.isEmpty() ? originalText : currentText;
+        AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+        builder.setTitle("✏️ Düzenleme Geçmişi");
+        builder.setMessage(sb.toString());
+        builder.setPositiveButton("Orijinal Metni Kopyala", (dialog, which) -> {
+            AndroidUtilities.addToClipboard(copyTarget);
+            BulletinFactory.of(this).createCopyBulletin("Metin kopyalandı").show();
+        });
+        builder.setNegativeButton(LocaleController.getString(R.string.Close), null);
+        showDialog(builder.create());
     }
 
     public void showSuggestionOfferForEditMessage(MessageSuggestionParams oldParams) {
@@ -46379,6 +46428,11 @@ public class ChatActivity extends BaseFragment implements
                 if (allowEdit || chatMode == MODE_WELCOME_MESSAGES) {
                     items.add(LocaleController.getString(R.string.Edit));
                     options.add(OPTION_EDIT);
+                    icons.add(R.drawable.msg_edit);
+                }
+                if (selectedObject != null && selectedObject.messageOwner != null && (selectedObject.messageOwner.edit_date != 0 || (selectedObject.messageOwner.message != null && selectedObject.messageOwner.message.contains("✏️")))) {
+                    items.add("Düzenleme Geçmişi");
+                    options.add(OPTION_VIEW_EDIT_HISTORY);
                     icons.add(R.drawable.msg_edit);
                 }
                 if (ChatObject.isMonoForum(currentChat) && selectedObject.getGroupId() == 0 && selectedObjectGroup == null && message != null && message.messageOwner != null && message.messageOwner.suggested_post == null && message.messageOwner.action == null) {

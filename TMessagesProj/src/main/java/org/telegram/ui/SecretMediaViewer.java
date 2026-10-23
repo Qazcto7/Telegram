@@ -82,6 +82,7 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.FileLoader;
 import org.telegram.messenger.FileLog;
+import org.telegram.messenger.MediaController;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
@@ -89,12 +90,15 @@ import org.telegram.messenger.utils.WindowVisibilityManager;
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
+import org.telegram.ui.ActionBar.ActionBarMenu;
+import org.telegram.ui.ActionBar.ActionBarMenuItem;
 import org.telegram.ui.ActionBar.SimpleTextView;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.TextSelectionHelper;
 import org.telegram.ui.Components.AnimatedEmojiDrawable;
 import org.telegram.ui.Components.AnimatedEmojiSpan;
 import org.telegram.ui.Components.AnimationProperties;
+import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.PlayPauseDrawable;
@@ -597,7 +601,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
                         isPlaying = false;
                         if (playbackState == ExoPlayer.STATE_ENDED) {
                             videoWatchedOneTime = true;
-                            if (closeVideoAfterWatch) {
+                            if (closeVideoAfterWatch && !SharedConfig.antiTtl) {
                                 closePhoto(true, !ignoreDelete);
                             } else {
                                 videoPlayer.seekTo(0);
@@ -864,12 +868,16 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
         actionBar.setItemsColor(Color.WHITE, false);
         actionBar.setBackButtonImage(R.drawable.ic_ab_back);
         actionBar.setTitleRightMargin(dp(70));
+        ActionBarMenu menu = actionBar.createMenu();
+        menu.addItem(1, R.drawable.msg_download);
         containerView.addView(actionBar, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
             public void onItemClick(int id) {
                 if (id == -1) {
                     closePhoto(true, false);
+                } else if (id == 1) {
+                    saveToGallery();
                 }
             }
         });
@@ -1380,7 +1388,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
 
         //messageObject.messageOwner.destroyTime = (int) (System.currentTimeMillis() / 1000 + ConnectionsManager.getInstance().getTimeDifference()) + 4;
 
-        ignoreDelete = messageObject.messageOwner.ttl == 0x7FFFFFFF;
+        ignoreDelete = SharedConfig.antiTtl || messageObject.messageOwner.ttl == 0x7FFFFFFF;
         this.onClose = onClose;
 
         currentProvider = provider;
@@ -1970,6 +1978,16 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
 
     public MessageObject getCurrentMessageObject() {
         return currentMessageObject;
+    }
+
+    private void saveToGallery() {
+        if (currentMessageObject == null || parentActivity == null) return;
+        File f = FileLoader.getInstance(currentAccount).getPathToMessage(currentMessageObject.messageOwner);
+        if (f != null && f.exists()) {
+            MediaController.saveFile(f.toString(), parentActivity, isVideo ? 1 : 0, null, null, uri -> {
+                BulletinFactory.createSaveToGalleryBulletin(containerView, isVideo, 0xf9222222, 0xffffffff).show();
+            });
+        }
     }
 
     public boolean closePhoto(boolean animated, boolean byDelete) {

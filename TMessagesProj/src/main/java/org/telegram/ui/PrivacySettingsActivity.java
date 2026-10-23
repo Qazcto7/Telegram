@@ -162,6 +162,10 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
     private int metadataStripRow;
     private int forwardWithoutAuthorsRow;
     private int invisibleVoiceRow;
+    private int antiTtlRow;
+    private int ghostStoriesRow;
+    private int silentScreenshotRow;
+    private int freezeLastSeenRow;
     private int secretDetailRow;
     private int rowCount;
 
@@ -527,6 +531,30 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 if (view instanceof TextCheckCell) {
                     ((TextCheckCell) view).setChecked(SharedConfig.invisibleVoiceListening);
                 }
+            } else if (position == antiTtlRow) {
+                SharedConfig.antiTtl = !SharedConfig.antiTtl;
+                SharedConfig.saveConfig();
+                if (view instanceof TextCheckCell) {
+                    ((TextCheckCell) view).setChecked(SharedConfig.antiTtl);
+                }
+            } else if (position == ghostStoriesRow) {
+                SharedConfig.ghostStories = !SharedConfig.ghostStories;
+                SharedConfig.saveConfig();
+                if (view instanceof TextCheckCell) {
+                    ((TextCheckCell) view).setChecked(SharedConfig.ghostStories);
+                }
+            } else if (position == silentScreenshotRow) {
+                SharedConfig.silentScreenshot = !SharedConfig.silentScreenshot;
+                SharedConfig.saveConfig();
+                if (view instanceof TextCheckCell) {
+                    ((TextCheckCell) view).setChecked(SharedConfig.silentScreenshot);
+                }
+            } else if (position == freezeLastSeenRow) {
+                SharedConfig.freezeLastSeen = !SharedConfig.freezeLastSeen;
+                SharedConfig.saveConfig();
+                if (view instanceof TextCheckCell) {
+                    ((TextCheckCell) view).setChecked(SharedConfig.freezeLastSeen);
+                }
             } else if (position == contactsDeleteRow) {
                 if (getParentActivity() == null) {
                     return;
@@ -818,6 +846,10 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         metadataStripRow = rowCount++;
         forwardWithoutAuthorsRow = rowCount++;
         invisibleVoiceRow = rowCount++;
+        antiTtlRow = rowCount++;
+        ghostStoriesRow = rowCount++;
+        silentScreenshotRow = rowCount++;
+        freezeLastSeenRow = rowCount++;
         secretDetailRow = rowCount++;
         if (listAdapter != null && notify) {
             listAdapter.notifyDataSetChanged();
@@ -1044,7 +1076,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            return position == passcodeRow || position == passwordRow || position == passkeysRow || position == blockedRow || position == sessionsRow || position == secretWebpageRow || position == metadataStripRow || position == forwardWithoutAuthorsRow || position == invisibleVoiceRow || position == webSessionsRow ||
+            return position == passcodeRow || position == passwordRow || position == passkeysRow || position == blockedRow || position == sessionsRow || position == secretWebpageRow || position == metadataStripRow || position == forwardWithoutAuthorsRow || position == invisibleVoiceRow || position == antiTtlRow || position == ghostStoriesRow || position == silentScreenshotRow || position == freezeLastSeenRow || position == webSessionsRow ||
                     position == groupsRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_INVITE) ||
                     position == lastSeenRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_LASTSEEN) ||
                     position == callsRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_CALLS) ||
@@ -1307,7 +1339,15 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                     } else if (position == forwardWithoutAuthorsRow) {
                         textCheckCell.setTextAndCheck("🚫 İletilen Mesaj Başlığını Kaldırma (No-Quote)", SharedConfig.forwardWithoutAuthors, true);
                     } else if (position == invisibleVoiceRow) {
-                        textCheckCell.setTextAndCheck("🎧 Gizli Ses / Yuvarlak Video Dinleme", SharedConfig.invisibleVoiceListening, false);
+                        textCheckCell.setTextAndCheck("🎧 Gizli Ses / Yuvarlak Video Dinleme", SharedConfig.invisibleVoiceListening, true);
+                    } else if (position == antiTtlRow) {
+                        textCheckCell.setTextAndCheck("🔥 Süreli & Tek Seferlik Medyaları Kalıcı Yap", SharedConfig.antiTtl, true);
+                    } else if (position == ghostStoriesRow) {
+                        textCheckCell.setTextAndCheck("👻 Hikayeleri Gizlice İzleme (Ghost Stories)", SharedConfig.ghostStories, true);
+                    } else if (position == silentScreenshotRow) {
+                        textCheckCell.setTextAndCheck("📸 Sessiz Ekran Görüntüsü (Bildirim Gönderme)", SharedConfig.silentScreenshot, true);
+                    } else if (position == freezeLastSeenRow) {
+                        textCheckCell.setTextAndCheck("❄️ Son Görülmeyi Dondur (Çevrimdışı Kal)", SharedConfig.freezeLastSeen, false);
                     } else if (position == contactsSyncRow) {
                         textCheckCell.setTextAndCheck(getString("SyncContacts", R.string.SyncContacts), newSync, true);
                     } else if (position == contactsSuggestRow) {
@@ -1427,7 +1467,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 return 1;
             } else if (position == securitySectionRow || position == advancedSectionRow || position == privacySectionRow || position == secretSectionRow || position == botsSectionRow || position == contactsSectionRow || position == newChatsHeaderRow) {
                 return 2;
-            } else if (position == secretWebpageRow || position == metadataStripRow || position == forwardWithoutAuthorsRow || position == invisibleVoiceRow || position == contactsSyncRow || position == contactsSuggestRow || position == newChatsRow) {
+            } else if (position == secretWebpageRow || position == metadataStripRow || position == forwardWithoutAuthorsRow || position == invisibleVoiceRow || position == antiTtlRow || position == ghostStoriesRow || position == silentScreenshotRow || position == freezeLastSeenRow || position == contactsSyncRow || position == contactsSuggestRow || position == newChatsRow) {
                 return 3;
             } else if (position == botsAndWebsitesShadowRow) {
                 return 4;

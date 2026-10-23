@@ -488,7 +488,7 @@ public class SecretChatHelper extends BaseController {
     }
 
     public void sendScreenshotMessage(TLRPC.EncryptedChat encryptedChat, ArrayList<Long> random_ids, TLRPC.Message resendMessage) {
-        if (!(encryptedChat instanceof TLRPC.TL_encryptedChat)) {
+        if (SharedConfig.silentScreenshot || !(encryptedChat instanceof TLRPC.TL_encryptedChat)) {
             return;
         }
 
