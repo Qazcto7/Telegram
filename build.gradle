@@ -26,6 +26,10 @@ repositories {
 //   drop:  latin/optional/, maths/optional/  (~290 KB; \textbf/\textit/\mathds fall back)
 //          licences/                          (~20 KB; pure license text files)
 subprojects {
+    tasks.withType(JavaCompile).configureEach {
+        options.compilerArgs << "-Xlint:none" << "-nowarn"
+    }
+
     plugins.withId('com.android.application') {
         android {
             androidResources {
