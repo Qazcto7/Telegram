@@ -159,6 +159,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
     private int secretMapRow;
     @Keep
     private int secretWebpageRow;
+    private int metadataStripRow;
     private int secretDetailRow;
     private int rowCount;
 
@@ -506,6 +507,12 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 if (view instanceof TextCheckCell) {
                     ((TextCheckCell) view).setChecked(getMessagesController().secretWebpagePreview == 1);
                 }
+            } else if (position == metadataStripRow) {
+                SharedConfig.stripMediaMetadata = !SharedConfig.stripMediaMetadata;
+                SharedConfig.saveConfig();
+                if (view instanceof TextCheckCell) {
+                    ((TextCheckCell) view).setChecked(SharedConfig.stripMediaMetadata);
+                }
             } else if (position == contactsDeleteRow) {
                 if (getParentActivity() == null) {
                     return;
@@ -794,6 +801,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         secretSectionRow = rowCount++;
         secretMapRow = rowCount++;
         secretWebpageRow = rowCount++;
+        metadataStripRow = rowCount++;
         secretDetailRow = rowCount++;
         if (listAdapter != null && notify) {
             listAdapter.notifyDataSetChanged();
@@ -1020,7 +1028,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            return position == passcodeRow || position == passwordRow || position == passkeysRow || position == blockedRow || position == sessionsRow || position == secretWebpageRow || position == webSessionsRow ||
+            return position == passcodeRow || position == passwordRow || position == passkeysRow || position == blockedRow || position == sessionsRow || position == secretWebpageRow || position == metadataStripRow || position == webSessionsRow ||
                     position == groupsRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_INVITE) ||
                     position == lastSeenRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_LASTSEEN) ||
                     position == callsRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_CALLS) ||
@@ -1240,7 +1248,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                     } else if (position == sessionsDetailRow) {
                         privacyCell.setText(getString("SessionsSettingsInfo", R.string.SessionsSettingsInfo));
                     } else if (position == secretDetailRow) {
-                        privacyCell.setText(getString("SecretWebPageInfo", R.string.SecretWebPageInfo));
+                        privacyCell.setText(getString("SecretWebPageInfo", R.string.SecretWebPageInfo) + "\n\n" + "Fotoğraf ve medya gönderilirken GPS konumu, kamera modeli ve tanımlayıcı EXIF meta verileri otomatik temizlenir.");
                     } else if (position == botsDetailRow) {
                         privacyCell.setText(getString("PrivacyBotsInfo", R.string.PrivacyBotsInfo));
                     } else if (position == privacyShadowRow) {
@@ -1277,7 +1285,9 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 case 3:
                     TextCheckCell textCheckCell = (TextCheckCell) holder.itemView;
                     if (position == secretWebpageRow) {
-                        textCheckCell.setTextAndCheck(getString("SecretWebPage", R.string.SecretWebPage), getMessagesController().secretWebpagePreview == 1, false);
+                        textCheckCell.setTextAndCheck(getString("SecretWebPage", R.string.SecretWebPage), getMessagesController().secretWebpagePreview == 1, true);
+                    } else if (position == metadataStripRow) {
+                        textCheckCell.setTextAndCheck("📍 Medya EXIF & GPS Temizleyici", SharedConfig.stripMediaMetadata, false);
                     } else if (position == contactsSyncRow) {
                         textCheckCell.setTextAndCheck(getString("SyncContacts", R.string.SyncContacts), newSync, true);
                     } else if (position == contactsSuggestRow) {
@@ -1397,7 +1407,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 return 1;
             } else if (position == securitySectionRow || position == advancedSectionRow || position == privacySectionRow || position == secretSectionRow || position == botsSectionRow || position == contactsSectionRow || position == newChatsHeaderRow) {
                 return 2;
-            } else if (position == secretWebpageRow || position == contactsSyncRow || position == contactsSuggestRow || position == newChatsRow) {
+            } else if (position == secretWebpageRow || position == metadataStripRow || position == contactsSyncRow || position == contactsSuggestRow || position == newChatsRow) {
                 return 3;
             } else if (position == botsAndWebsitesShadowRow) {
                 return 4;

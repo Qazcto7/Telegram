@@ -50,6 +50,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
 import androidx.collection.LongSparseArray;
 import androidx.core.view.inputmethod.InputContentInfoCompat;
+import androidx.exifinterface.media.ExifInterface;
 
 import org.json.JSONObject;
 import org.telegram.messenger.audioinfo.AudioInfo;
@@ -9388,6 +9389,98 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     private final static int ERROR_TYPE_UNSUPPORTED = 1;
     private final static int ERROR_TYPE_FILE_TOO_LARGE = 2;
 
+    public static String stripMetadataIfNeeded(String path) {
+        if (!SharedConfig.stripMediaMetadata || TextUtils.isEmpty(path)) {
+            return path;
+        }
+        try {
+            String lower = path.toLowerCase();
+            if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".webp") || lower.endsWith(".heic") || lower.endsWith(".heif") || lower.endsWith(".dng")) {
+                File originalFile = new File(path);
+                if (!originalFile.exists() || !originalFile.isFile() || originalFile.length() == 0) {
+                    return path;
+                }
+                File cacheDir = FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE);
+                File cleanFile;
+                if (path.startsWith(cacheDir.getAbsolutePath()) && originalFile.getName().startsWith("clean_")) {
+                    cleanFile = originalFile;
+                } else {
+                    cleanFile = new File(cacheDir, "clean_" + System.currentTimeMillis() + "_" + originalFile.getName());
+                    AndroidUtilities.copyFile(originalFile, cleanFile);
+                }
+                ExifInterface exif = new ExifInterface(cleanFile.getAbsolutePath());
+                String[] tagsToRemove = new String[]{
+                    ExifInterface.TAG_GPS_LATITUDE,
+                    ExifInterface.TAG_GPS_LATITUDE_REF,
+                    ExifInterface.TAG_GPS_LONGITUDE,
+                    ExifInterface.TAG_GPS_LONGITUDE_REF,
+                    ExifInterface.TAG_GPS_ALTITUDE,
+                    ExifInterface.TAG_GPS_ALTITUDE_REF,
+                    ExifInterface.TAG_GPS_TIMESTAMP,
+                    ExifInterface.TAG_GPS_DATESTAMP,
+                    ExifInterface.TAG_GPS_PROCESSING_METHOD,
+                    ExifInterface.TAG_GPS_AREA_INFORMATION,
+                    ExifInterface.TAG_GPS_SPEED,
+                    ExifInterface.TAG_GPS_SPEED_REF,
+                    ExifInterface.TAG_GPS_TRACK,
+                    ExifInterface.TAG_GPS_TRACK_REF,
+                    ExifInterface.TAG_GPS_IMG_DIRECTION,
+                    ExifInterface.TAG_GPS_IMG_DIRECTION_REF,
+                    ExifInterface.TAG_GPS_DEST_LATITUDE,
+                    ExifInterface.TAG_GPS_DEST_LATITUDE_REF,
+                    ExifInterface.TAG_GPS_DEST_LONGITUDE,
+                    ExifInterface.TAG_GPS_DEST_LONGITUDE_REF,
+                    ExifInterface.TAG_GPS_DEST_BEARING,
+                    ExifInterface.TAG_GPS_DEST_BEARING_REF,
+                    ExifInterface.TAG_GPS_DEST_DISTANCE,
+                    ExifInterface.TAG_GPS_DEST_DISTANCE_REF,
+                    ExifInterface.TAG_GPS_DOP,
+                    ExifInterface.TAG_GPS_MAP_DATUM,
+                    ExifInterface.TAG_GPS_STATUS,
+                    ExifInterface.TAG_GPS_MEASURE_MODE,
+                    ExifInterface.TAG_GPS_SATELLITES,
+                    ExifInterface.TAG_GPS_DIFFERENTIAL,
+                    ExifInterface.TAG_GPS_H_POSITIONING_ERROR,
+                    ExifInterface.TAG_MAKE,
+                    ExifInterface.TAG_MODEL,
+                    ExifInterface.TAG_SOFTWARE,
+                    ExifInterface.TAG_DEVICE_SETTING_DESCRIPTION,
+                    ExifInterface.TAG_IMAGE_DESCRIPTION,
+                    ExifInterface.TAG_ARTIST,
+                    ExifInterface.TAG_COPYRIGHT,
+                    ExifInterface.TAG_DATETIME,
+                    ExifInterface.TAG_DATETIME_ORIGINAL,
+                    ExifInterface.TAG_DATETIME_DIGITIZED,
+                    ExifInterface.TAG_SUBSEC_TIME,
+                    ExifInterface.TAG_SUBSEC_TIME_ORIGINAL,
+                    ExifInterface.TAG_SUBSEC_TIME_DIGITIZED,
+                    ExifInterface.TAG_CAMERA_OWNER_NAME,
+                    ExifInterface.TAG_BODY_SERIAL_NUMBER,
+                    ExifInterface.TAG_LENS_MAKE,
+                    ExifInterface.TAG_LENS_MODEL,
+                    ExifInterface.TAG_LENS_SERIAL_NUMBER,
+                    ExifInterface.TAG_LENS_SPECIFICATION,
+                    ExifInterface.TAG_USER_COMMENT,
+                    ExifInterface.TAG_XMP
+                };
+                boolean modified = false;
+                for (String tag : tagsToRemove) {
+                    if (exif.getAttribute(tag) != null) {
+                        exif.setAttribute(tag, null);
+                        modified = true;
+                    }
+                }
+                if (modified) {
+                    exif.saveAttributes();
+                }
+                return cleanFile.getAbsolutePath();
+            }
+        } catch (Throwable e) {
+            FileLog.e(e);
+        }
+        return path;
+    }
+
     private static int prepareSendingDocumentInternal(AccountInstance accountInstance, String path, String originalPath, Uri uri, String mime, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, final ArrayList<TLRPC.MessageEntity> entities, final MessageObject editingMessageObject, long[] groupId, boolean isGroupFinal, CharSequence caption, boolean notify, int scheduleDate, int scheduleRepeatPeriod, Integer[] docType, boolean forceDocument, SendMessageChatArguments sendMessageChatArguments, long effectId, boolean invertMedia, long payStars, long monoForumPeerId, MessageSuggestionParams suggestionParams, PollSendParams pollSendParams, int pollIndex) {
         final long forcedPollGroupId = pollSendParams != null ? pollSendParams.groupId : 0;
 
@@ -9423,6 +9516,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             if (!hasExt) {
                 extension = null;
             }
+        }
+        if (SharedConfig.stripMediaMetadata && path != null) {
+            path = stripMetadataIfNeeded(path);
         }
         final File f = new File(path);
         if (!f.exists() || f.length() == 0) {
@@ -10180,7 +10276,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     @UiThread
     public static void prepareSendingPhoto(AccountInstance accountInstance, String imageFilePath, String thumbFilePath, Uri imageUri, long dialogId, MessageObject replyToMsg, MessageObject replyToTopMsg, TL_stories.StoryItem storyItem, ChatActivity.ReplyQuote quote, ArrayList<TLRPC.MessageEntity> entities, ArrayList<TLRPC.InputDocument> stickers, InputContentInfoCompat inputContent, int ttl, MessageObject editingMessageObject, VideoEditedInfo videoEditedInfo, boolean notify, int scheduleDate, int scheduleRepeatPeriod, int mode, boolean forceDocument, CharSequence caption, SendMessageChatArguments sendMessageChatArguments, long effectId, long payStars, long monoForumPeerId, MessageSuggestionParams suggestionParams) {
         SendingMediaInfo info = new SendingMediaInfo();
-        info.path = imageFilePath;
+        info.path = stripMetadataIfNeeded(imageFilePath);
         info.thumbPath = thumbFilePath;
         info.uri = imageUri;
         if (caption != null) {
@@ -10835,6 +10931,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
             for (int a = 0; a < count; a++) {
                 final SendingMediaInfo info = media.get(a);
+                if (SharedConfig.stripMediaMetadata && info.path != null) {
+                    info.path = stripMetadataIfNeeded(info.path);
+                }
                 if (info.path != null && info.isLivePhoto && info.discardLivePhoto) {
                     final File wholeFile = new File(info.path);
                     final File imageFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE), Integer.MIN_VALUE + "_" + SharedConfig.getLastLocalId() + ".jpeg");
@@ -10974,6 +11073,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             int mediaCount = 0;
             for (int a = 0; a < count; a++) {
                 final SendingMediaInfo info = media.get(a);
+                if (SharedConfig.stripMediaMetadata && info.path != null) {
+                    info.path = stripMetadataIfNeeded(info.path);
+                }
                 final boolean last = mediaCount == 0;
                 if (forcedPollGroupId != 0) {
                     lastGroupId = groupId = forcedPollGroupId;

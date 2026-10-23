@@ -657,6 +657,8 @@ public class ConnectionsManager extends BaseController {
                 native_setProxySettings(currentAccount, proxySettings.getAddress(), proxySettings.getPort(),
                         proxySettings.getUser(), proxySettings.getPassword(), proxySettings.getSecret());
             }
+        } else if (SharedConfig.proxyKillSwitch) {
+            native_setProxySettings(currentAccount, "127.0.0.1", 1, "", "", "");
         }
         String installer = "";
         try {
@@ -988,11 +990,15 @@ public class ConnectionsManager extends BaseController {
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
             if (enabled && settings != null && settings.isValid()) {
                 native_setProxySettings(a, address, port, username, password, secret);
-            } else if (SharedConfig.currentProxy != null && SharedConfig.currentProxy.settings != null && SharedConfig.currentProxy.settings.isValid()) {
+            } else if (enabled && SharedConfig.currentProxy != null && SharedConfig.currentProxy.settings != null && SharedConfig.currentProxy.settings.isValid()) {
                 ProxySettings ps = SharedConfig.currentProxy.settings;
                 native_setProxySettings(a, ps.getAddress(), ps.getPort(), ps.getUser(), ps.getPassword(), ps.getSecret());
             } else {
-                native_setProxySettings(a, "", 1080, "", "", "");
+                if (SharedConfig.proxyKillSwitch) {
+                    native_setProxySettings(a, "127.0.0.1", 1, "", "", "");
+                } else {
+                    native_setProxySettings(a, "", 1080, "", "", "");
+                }
             }
             AccountInstance accountInstance = AccountInstance.getInstance(a);
             if (accountInstance.getUserConfig().isClientActivated()) {

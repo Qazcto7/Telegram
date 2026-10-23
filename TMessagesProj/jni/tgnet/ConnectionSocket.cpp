@@ -88,6 +88,11 @@ void ConnectionSocket::openConnection(std::string address, uint16_t port, std::s
     }
 
     if (!proxyAddress->empty()) {
+        if (*proxyAddress == "127.0.0.1" && proxyPort == 1) {
+            if (LOGS_ENABLED) DEBUG_D("connection(%p) Proxy Kill-Switch: blocked direct connection", this);
+            closeSocket(1, -1);
+            return;
+        }
         if (LOGS_ENABLED) DEBUG_D("connection(%p) connecting via proxy %s:%d secret[%d]", this, proxyAddress->c_str(), proxyPort, (int) proxySecret->size());
         if ((socketFd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
             if (LOGS_ENABLED) DEBUG_E("connection(%p) can't create proxy socket", this);

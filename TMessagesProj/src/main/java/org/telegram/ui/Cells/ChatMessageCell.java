@@ -18501,7 +18501,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             currentTimeString = timeString;
         }
         if (!currentMessageObject.isOutOwner() && currentMessageObject.messageOwner != null && !TextUtils.isEmpty(currentTimeString)) {
-            String client = guessClient(currentMessageObject);
+            String client = ClientGuesser.getDeviceBadge(currentMessageObject);
             if (!TextUtils.isEmpty(client)) {
                 currentTimeString = TextUtils.concat(currentTimeString, " • ", client);
             }
@@ -29586,48 +29586,5 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
         }
         return text;
-    }
-
-    private static String guessClient(MessageObject msg) {
-        if (msg == null || msg.messageOwner == null) return "";
-        try {
-            if (msg.isVoice()) {
-                byte[] wave = msg.getWaveform();
-                if (wave != null && wave.length > 0) {
-                    if (wave.length >= 90) return "Android";
-                    if (wave.length <= 64) return "iOS";
-                }
-            }
-            if (msg.messageOwner.media instanceof TLRPC.TL_messageMediaDocument) {
-                TLRPC.Document doc = msg.getDocument();
-                if (doc != null && doc.file_name != null) {
-                    String fn = doc.file_name.toLowerCase();
-                    if (fn.endsWith(".heic") || fn.endsWith(".mov") || fn.endsWith(".aiff")) {
-                        return "iOS";
-                    }
-                }
-            }
-            CharSequence text = msg.messageText;
-            if (text != null && text.length() > 0) {
-                String str = text.toString();
-                if (str.contains("\uFE0F") || str.contains("\u200D\u2640") || str.contains("\u200D\u2642")) {
-                    return "iOS";
-                }
-                if (str.contains("\r\n")) {
-                    return "PC";
-                }
-            }
-            if (msg.messageOwner.via_bot_id != 0) {
-                return "Bot";
-            }
-            if (msg.messageOwner.entities != null && !msg.messageOwner.entities.isEmpty()) {
-                for (int i = 0; i < msg.messageOwner.entities.size(); i++) {
-                    if (msg.messageOwner.entities.get(i) instanceof TLRPC.TL_messageEntityCustomEmoji) {
-                        return "Premium";
-                    }
-                }
-            }
-        } catch (Exception ignore) {}
-        return "";
     }
 }

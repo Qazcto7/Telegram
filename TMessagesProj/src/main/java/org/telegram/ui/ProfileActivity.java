@@ -655,6 +655,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private int infoEndRowEmpty;
     private int phoneRow;
     private int noteRow;
+    private int clientGuessRow;
     private int locationRow;
     private int userInfoRow;
     private int channelInfoRow;
@@ -4656,6 +4657,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
             } else if (position == noteRow) {
                 editNotes(view, position);
+            } else if (position == clientGuessRow) {
+                BulletinFactory.of(this).createSimpleBulletin(R.drawable.msg_info, "Cihaz bilgisi kullanıcının mesaj ve medya verileri analiz edilerek tespit edilmiştir.").show();
             } else {
                 processOnClickOrPress(position, view, x, y);
             }
@@ -10521,6 +10524,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         infoEndRowEmpty = -1;
         phoneRow = -1;
         noteRow = -1;
+        clientGuessRow = -1;
         userInfoRow = -1;
         locationRow = -1;
         channelInfoRow = -1;
@@ -10733,6 +10737,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
                 if (actionsView == null && userId != getUserConfig().getClientUserId()) {
                     notificationsRow = rowCount++;
+                }
+                if (user != null && !isBot && userId != getUserConfig().getClientUserId()) {
+                    clientGuessRow = rowCount++;
                 }
                 if (isBot && user != null && user.bot_has_main_app) {
                     botAppRow = rowCount++;
@@ -13506,6 +13513,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         }
                         isFragmentPhoneNumber = phoneNumber != null && phoneNumber.matches("888\\d{8}");
                         detailCell.setTextAndValue(text, LocaleController.getString(isFragmentPhoneNumber ? R.string.AnonymousNumber : R.string.PhoneMobile), false);
+                    } else if (position == clientGuessRow) {
+                        detailCell.setTextAndValue(ClientGuesser.getDeviceStringForUser(userId), "Tahmini İstemci / Cihaz", false);
                     } else if (position == noteRow) {
                         final TLRPC.UserFull userInfo = getMessagesController().getUserFull(userId);
                         if (userInfo == null) return;
@@ -14321,7 +14330,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             if (position == infoHeaderRow || position == membersHeaderRow || position == settingsSectionRow2 ||
                     position == numberSectionRow || position == helpHeaderRow || position == debugHeaderRow || position == botPermissionsHeader) {
                 return VIEW_TYPE_HEADER;
-            } else if (position == phoneRow || position == locationRow || position == numberRow || position == birthdayRow) {
+            } else if (position == phoneRow || position == locationRow || position == numberRow || position == birthdayRow || position == clientGuessRow) {
                 return VIEW_TYPE_TEXT_DETAIL;
             } else if (position == usernameRow || position == setUsernameRow) {
                 return VIEW_TYPE_TEXT_DETAIL_MULTILINE;
@@ -15721,6 +15730,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             put(++pointer, infoEndRowEmpty, sparseIntArray);
             put(++pointer, phoneRow, sparseIntArray);
             put(++pointer, noteRow, sparseIntArray);
+            put(++pointer, clientGuessRow, sparseIntArray);
             put(++pointer, locationRow, sparseIntArray);
             put(++pointer, userInfoRow, sparseIntArray);
             put(++pointer, channelInfoRow, sparseIntArray);

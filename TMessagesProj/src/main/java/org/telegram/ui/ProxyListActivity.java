@@ -90,6 +90,8 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
     private int rowCount;
     @Keep
     private int useProxyRow;
+    private int killSwitchRow;
+    private int killSwitchInfoRow;
     private int useProxyShadowRow;
     private int connectionsHeaderRow;
     private int proxyStartRow;
@@ -437,6 +439,12 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 SharedConfig.saveConfig();
 
                 updateRows(true);
+            } else if (position == killSwitchRow) {
+                SharedConfig.proxyKillSwitch = !SharedConfig.proxyKillSwitch;
+                TextCheckCell textCheckCell = (TextCheckCell) view;
+                textCheckCell.setChecked(SharedConfig.proxyKillSwitch);
+                SharedConfig.saveConfig();
+                ConnectionsManager.setProxySettings(useProxySettings, SharedConfig.currentProxy != null ? SharedConfig.currentProxy.settings : null);
             } else if (position >= proxyStartRow && position < proxyEndRow) {
                 if (!selectedItems.isEmpty()) {
                     listAdapter.toggleSelected(position);
@@ -608,11 +616,9 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
             rotationTimeoutRow = -1;
             rotationTimeoutInfoRow = -1;
         }
-        if (rotationTimeoutInfoRow == -1) {
-            useProxyShadowRow = rowCount++;
-        } else {
-            useProxyShadowRow = -1;
-        }
+        killSwitchRow = rowCount++;
+        killSwitchInfoRow = rowCount++;
+        useProxyShadowRow = -1;
         connectionsHeaderRow = rowCount++;
 
         if (notify) {
@@ -856,9 +862,11 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 case VIEW_TYPE_TEXT_CHECK: {
                     TextCheckCell checkCell = (TextCheckCell) holder.itemView;
                     if (position == useProxyRow) {
-                        checkCell.setTextAndCheck(getString(R.string.UseProxySettings), useProxySettings, rotationRow != -1);
+                        checkCell.setTextAndCheck(getString(R.string.UseProxySettings), useProxySettings, rotationRow != -1 || killSwitchRow != -1);
                     } else if (position == rotationRow) {
                         checkCell.setTextAndCheck(getString(R.string.UseProxyRotation), SharedConfig.proxyRotationEnabled, true);
+                    } else if (position == killSwitchRow) {
+                        checkCell.setTextAndCheck("🛡️ Proxy Zorlama (Kill-Switch)", SharedConfig.proxyKillSwitch, false);
                     }
                     break;
                 }
@@ -866,6 +874,8 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                     TextInfoPrivacyCell cell = (TextInfoPrivacyCell) holder.itemView;
                     if (position == rotationTimeoutInfoRow) {
                         cell.setText(getString(R.string.ProxyRotationTimeoutInfo));
+                    } else if (position == killSwitchInfoRow) {
+                        cell.setText("Proxy bağlantısı koptuğunda veya devre dışıyken IP adresinizin Telegram sunucularına sızmasını önlemek için doğrudan internet bağlantısını engeller.");
                     }
                     break;
                 }
@@ -914,6 +924,8 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                     checkCell.setChecked(useProxySettings);
                 } else if (position == rotationRow) {
                     checkCell.setChecked(SharedConfig.proxyRotationEnabled);
+                } else if (position == killSwitchRow) {
+                    checkCell.setChecked(SharedConfig.proxyKillSwitch);
                 }
             } else {
                 super.onBindViewHolder(holder, position, payloads);
@@ -930,6 +942,8 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                     checkCell.setChecked(useProxySettings);
                 } else if (position == rotationRow) {
                     checkCell.setChecked(SharedConfig.proxyRotationEnabled);
+                } else if (position == killSwitchRow) {
+                    checkCell.setChecked(SharedConfig.proxyKillSwitch);
                 }
             }
         }
@@ -937,7 +951,7 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            return position == useProxyRow || position == rotationRow || position == proxyAddRow || position == deleteAllRow || position >= proxyStartRow && position < proxyEndRow;
+            return position == useProxyRow || position == rotationRow || position == killSwitchRow || position == proxyAddRow || position == deleteAllRow || position >= proxyStartRow && position < proxyEndRow;
         }
 
         @Override
@@ -997,6 +1011,10 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 return -10;
             } else if (position == rotationTimeoutInfoRow) {
                 return -11;
+            } else if (position == killSwitchRow) {
+                return -12;
+            } else if (position == killSwitchInfoRow) {
+                return -13;
             } else if (position >= proxyStartRow && position < proxyEndRow) {
                 return proxyList.get(position - proxyStartRow).hashCode();
             } else {
@@ -1010,12 +1028,14 @@ public class ProxyListActivity extends BaseFragment implements NotificationCente
                 return VIEW_TYPE_SHADOW;
             } else if (position == proxyAddRow || position == deleteAllRow) {
                 return VIEW_TYPE_TEXT_SETTING;
-            } else if (position == useProxyRow || position == rotationRow) {
+            } else if (position == useProxyRow || position == rotationRow || position == killSwitchRow) {
                 return VIEW_TYPE_TEXT_CHECK;
             } else if (position == connectionsHeaderRow) {
                 return VIEW_TYPE_HEADER;
             } else if (position == rotationTimeoutRow) {
                 return VIEW_TYPE_SLIDE_CHOOSER;
+            } else if (position == rotationTimeoutInfoRow || position == killSwitchInfoRow) {
+                return VIEW_TYPE_INFO;
             } else if (position >= proxyStartRow && position < proxyEndRow) {
                 return VIEW_TYPE_PROXY_DETAIL;
             } else {
