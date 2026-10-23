@@ -157,7 +157,7 @@ public class ClientGuesser {
                         if (fn.startsWith("screenshot (") || fn.startsWith("ekran görüntüsü (") || fn.startsWith("screen shot 20")) {
                             return CLIENT_DESKTOP;
                         }
-                        if (fn.startsWith("pxl_") || fn.startsWith("screenshot_20") || fn.startsWith("screen_recording_20") || fn.startsWith("vid_20")) {
+                        if (fn.endsWith(".apk") || fn.startsWith("pxl_") || fn.startsWith("screenshot_20") || fn.startsWith("screen_recording_20") || fn.startsWith("vid_20")) {
                             return CLIENT_ANDROID;
                         }
                     }
@@ -182,13 +182,13 @@ public class ClientGuesser {
                     return CLIENT_DESKTOP;
                 }
 
-                // Apple smart punctuation (curly quotes, smart apostrophe, ellipsis, em-dash)
-                if (str.contains("\u201C") || str.contains("\u201D") || str.contains("\u2018") || str.contains("\u2019") || str.contains("\u2026") || str.contains("\u2014")) {
+                // Apple private Unicode (Apple logo )
+                if (str.contains("\uF8FF")) {
                     return CLIENT_IOS;
                 }
 
-                // Apple emoji variation selectors and Apple private Unicode
-                if (str.contains("\uFE0F") || str.contains("\u200D\u2640") || str.contains("\u200D\u2642") || str.contains("\uF8FF")) {
+                // Apple smart punctuation (curly double & single quotes)
+                if (str.contains("\u201C") || str.contains("\u201D") || str.contains("\u2018") || str.contains("\u2019")) {
                     return CLIENT_IOS;
                 }
             }

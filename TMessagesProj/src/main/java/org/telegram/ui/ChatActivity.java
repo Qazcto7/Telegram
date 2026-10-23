@@ -26786,7 +26786,7 @@ public class ChatActivity extends BaseFragment implements
                     && messageObject.messageOwner != null && messageObject.messageOwner.message != null
                     && !old.messageOwner.message.equals(messageObject.messageOwner.message)
                     && !messageObject.isOut()
-                    && !messageObject.messageOwner.message.contains("✏️")) {
+                    && !messageObject.messageOwner.message.contains("✏️ [Eski:")) {
                 String oldText = old.messageOwner.message;
                 messageObject.messageOwner.message = messageObject.messageOwner.message + "\n\n✏️ [Eski: " + oldText + "]";
                 messageObject.messageText = messageObject.messageOwner.message;
@@ -46430,7 +46430,7 @@ public class ChatActivity extends BaseFragment implements
                     options.add(OPTION_EDIT);
                     icons.add(R.drawable.msg_edit);
                 }
-                if (selectedObject != null && selectedObject.messageOwner != null && (selectedObject.messageOwner.edit_date != 0 || (selectedObject.messageOwner.message != null && selectedObject.messageOwner.message.contains("✏️")))) {
+                if (selectedObject != null && selectedObject.messageOwner != null && (selectedObject.messageOwner.edit_date != 0 || (selectedObject.messageOwner.message != null && selectedObject.messageOwner.message.contains("✏️ [Eski:")))) {
                     items.add("Düzenleme Geçmişi");
                     options.add(OPTION_VIEW_EDIT_HISTORY);
                     icons.add(R.drawable.msg_edit);

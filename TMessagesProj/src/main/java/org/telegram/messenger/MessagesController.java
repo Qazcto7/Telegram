@@ -19378,7 +19378,7 @@ public class MessagesController extends BaseController implements NotificationCe
                             }
                         } catch (Exception ignore) {}
                     }
-                    if (oldText != null && !oldText.equals(message.message) && !message.message.contains("✏️")) {
+                    if (oldText != null && !oldText.equals(message.message) && !message.message.contains("✏️ [Eski:")) {
                         message.message = message.message + "\n\n✏️ [Eski: " + oldText + "]";
                     }
                 }

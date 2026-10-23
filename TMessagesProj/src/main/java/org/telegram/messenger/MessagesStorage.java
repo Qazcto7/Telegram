@@ -16317,7 +16317,7 @@ public class MessagesStorage extends BaseController {
                                     oldMessage.readAttachPath(data, getUserConfig().clientUserId);
                                     data.reuse();
                                     if (oldMessage != null && oldMessage.message != null && !oldMessage.message.isEmpty() && message.message != null && !oldMessage.message.equals(message.message)) {
-                                        if (!message.out && !message.message.contains("✏️")) {
+                                        if (!message.out && !message.message.contains("✏️ [Eski:")) {
                                             message.message = message.message + "\n\n✏️ [Eski: " + oldMessage.message + "]";
                                         }
                                     }

@@ -1982,7 +1982,36 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
 
     private void saveToGallery() {
         if (currentMessageObject == null || parentActivity == null) return;
-        File f = FileLoader.getInstance(currentAccount).getPathToMessage(currentMessageObject.messageOwner);
+        File f = null;
+        if (currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.attachPath != null) {
+            File attachFile = new File(currentMessageObject.messageOwner.attachPath);
+            if (attachFile.exists()) {
+                f = attachFile;
+            }
+        }
+        if (f == null && currentMessageObject.messageOwner != null) {
+            f = FileLoader.getInstance(currentAccount).getPathToMessage(currentMessageObject.messageOwner);
+        }
+        if (f != null && !f.exists()) {
+            File encryptedFile = new File(f.getAbsolutePath() + ".enc");
+            if (encryptedFile.exists()) {
+                f = encryptedFile;
+            } else {
+                File cacheFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE), f.getName());
+                if (cacheFile.exists()) {
+                    f = cacheFile;
+                }
+            }
+        }
+        if (f != null && !f.exists() && currentMessageObject.photoThumbs != null) {
+            TLRPC.PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(currentMessageObject.photoThumbs, AndroidUtilities.getPhotoSize());
+            if (sizeFull != null) {
+                File photoFile = FileLoader.getInstance(currentAccount).getPathToAttach(sizeFull, true);
+                if (photoFile != null && photoFile.exists()) {
+                    f = photoFile;
+                }
+            }
+        }
         if (f != null && f.exists()) {
             MediaController.saveFile(f.toString(), parentActivity, isVideo ? 1 : 0, null, null, uri -> {
                 BulletinFactory.createSaveToGalleryBulletin(containerView, isVideo, 0xf9222222, 0xffffffff).show();
