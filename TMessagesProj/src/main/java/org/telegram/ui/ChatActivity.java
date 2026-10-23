@@ -26800,6 +26800,16 @@ public class ChatActivity extends BaseFragment implements
             }
 
             addToPolls(messageObject, old);
+            if (old != null && old.messageOwner != null && old.messageOwner.message != null && !old.messageOwner.message.isEmpty()
+                    && messageObject.messageOwner != null && messageObject.messageOwner.message != null
+                    && !old.messageOwner.message.equals(messageObject.messageOwner.message)
+                    && !messageObject.isOut()
+                    && !messageObject.messageOwner.message.contains("✏️")) {
+                String oldText = old.messageOwner.message;
+                messageObject.messageOwner.message = messageObject.messageOwner.message + "\n\n✏️ [Eski: " + oldText + "]";
+                messageObject.messageText = messageObject.messageOwner.message;
+                messageObject.generateLayout(null);
+            }
             if (old.richCheckboxEcho && messageObject.type == MessageObject.TYPE_ARTICLE && old.richLayout != null && messageObject.messageOwner != null) {
                 messageObject.richLayout = old.richLayout;
                 messageObject.messageOwner.rich_message = old.messageOwner.rich_message;

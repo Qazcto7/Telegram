@@ -16316,6 +16316,11 @@ public class MessagesStorage extends BaseController {
                                     TLRPC.Message oldMessage = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
                                     oldMessage.readAttachPath(data, getUserConfig().clientUserId);
                                     data.reuse();
+                                    if (oldMessage != null && oldMessage.message != null && !oldMessage.message.isEmpty() && message.message != null && !oldMessage.message.equals(message.message)) {
+                                        if (!message.out && !message.message.contains("✏️")) {
+                                            message.message = message.message + "\n\n✏️ [Eski: " + oldMessage.message + "]";
+                                        }
+                                    }
                                     if (reactionUpdates != null) {
                                         reactionUpdates.add(new SavedReactionsUpdate(selfId, oldMessage, message));
                                     }

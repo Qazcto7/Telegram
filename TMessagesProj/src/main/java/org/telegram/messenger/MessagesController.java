@@ -19357,12 +19357,21 @@ public class MessagesController extends BaseController implements NotificationCe
                     message.attachPath = "";
                 }
                 if (!message.out && message.message != null && !message.message.isEmpty()) {
-                    try {
-                        TLRPC.Message oldMsg = getMessagesStorage().getMessage(message.dialog_id, message.id);
-                        if (oldMsg != null && oldMsg.message != null && !oldMsg.message.isEmpty() && !oldMsg.message.equals(message.message) && !message.message.contains("[Düzenlendi - Eski:")) {
-                            message.message = message.message + "\n\n[Düzenlendi - Eski: " + oldMsg.message + "]";
-                        }
-                    } catch (Exception ignore) {}
+                    String oldText = null;
+                    MessageObject existingObj = dialogMessagesByIds.get(message.id);
+                    if (existingObj != null && existingObj.messageOwner != null && existingObj.messageOwner.message != null && !existingObj.messageOwner.message.isEmpty()) {
+                        oldText = existingObj.messageOwner.message;
+                    } else {
+                        try {
+                            TLRPC.Message oldMsg = getMessagesStorage().getMessage(message.dialog_id, message.id);
+                            if (oldMsg != null && oldMsg.message != null && !oldMsg.message.isEmpty()) {
+                                oldText = oldMsg.message;
+                            }
+                        } catch (Exception ignore) {}
+                    }
+                    if (oldText != null && !oldText.equals(message.message) && !message.message.contains("✏️")) {
+                        message.message = message.message + "\n\n✏️ [Eski: " + oldText + "]";
+                    }
                 }
 
                 ImageLoader.saveMessageThumbs(message);
