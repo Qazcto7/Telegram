@@ -10818,9 +10818,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         if (media.isEmpty()) {
             return;
         }
-        if (storyItem == null) {
-            forceDocument = true;
-        }
         for (int a = 0, N = media.size(); a < N; a++) {
             if (media.get(a).ttl > 0) {
                 groupMedia = false;
@@ -10830,6 +10827,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         final long forcedPollGroupId = pollSendParams != null ? pollSendParams.groupId : 0;
         final boolean forceDisableCheckSentMedia = forcedPollGroupId != 0;
         final boolean groupMediaFinal = groupMedia;
+        final boolean forceDocumentFinal = (storyItem == null) || forceDocument;
         mediaSendQueue.postRunnable(() -> {
             long beginTime = System.currentTimeMillis();
             HashMap<SendingMediaInfo, MediaSendPrepareWorker> workers;
@@ -10875,7 +10873,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             }
 
             boolean isEncrypted = DialogObject.isEncryptedDialog(dialogId);
-            if (!forceDocument && groupMediaFinal) {
+            if (!forceDocumentFinal && groupMediaFinal) {
                 workers = new HashMap<>();
                 for (int a = 0; a < count; a++) {
                     final SendingMediaInfo info = media.get(a);
@@ -11015,7 +11013,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                             document.attributes.add(fileName);
                             document.size = info.searchImage.size;
                             document.dc_id = 0;
-                            if (!forceDocument && cacheFile.toString().endsWith("mp4")) {
+                            if (!forceDocumentFinal && cacheFile.toString().endsWith("mp4")) {
                                 document.mime_type = "video/mp4";
                                 document.attributes.add(new TLRPC.TL_documentAttributeAnimated());
                             } else {
@@ -11186,13 +11184,13 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         TLRPC.PhotoSize cover = null;
 
                         final VideoEditedInfo videoEditedInfo;
-                        if (forceDocument) {
+                        if (forceDocumentFinal) {
                             videoEditedInfo = null;
                         } else {
                             videoEditedInfo = info.videoEditedInfo != null ? info.videoEditedInfo : createCompressionSettings(info.path, info.livePhotoVideoOffset);
                         }
 
-                        if (!forceDocument && (videoEditedInfo != null || info.path.endsWith("mp4")) || info.isLivePhoto) {
+                        if (!forceDocumentFinal && (videoEditedInfo != null || info.path.endsWith("mp4")) || info.isLivePhoto) {
                             if (info.path == null && info.searchImage != null) {
                                 if (info.searchImage.photo instanceof TLRPC.TL_photo) {
                                     info.path = FileLoader.getInstance(accountInstance.getCurrentAccount()).getPathToAttach(info.searchImage.photo, true).getAbsolutePath();
@@ -11515,7 +11513,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                 }
                             }
                         }
-                        if (forceDocument || ImageLoader.shouldSendImageAsDocument(info.path, info.uri)) {
+                        if (forceDocumentFinal || ImageLoader.shouldSendImageAsDocument(info.path, info.uri)) {
                             isDocument = true;
                             extension = tempPath != null ? FileLoader.getFileExtension(new File(tempPath)) : "";
                         } else if (!info.forceImage && tempPath != null && (tempPath.endsWith(".gif") || tempPath.endsWith(".webp")) && info.ttl <= 0) {
@@ -11691,12 +11689,12 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 long[] groupId2 = new long[1];
                 int documentsCount = sendAsDocuments.size();
                 for (int a = 0; a < documentsCount; a++) {
-                    if (forceDocument && !isEncrypted && count > 1 && mediaCount % 10 == 0) {
+                    if (forceDocumentFinal && !isEncrypted && count > 1 && mediaCount % 10 == 0) {
                         groupId2[0] = Utilities.random.nextLong();
                         mediaCount = 0;
                     }
                     mediaCount++;
-                    int error = prepareSendingDocumentInternal(accountInstance, sendAsDocuments.get(a), sendAsDocumentsOriginal.get(a), sendAsDocumentsUri.get(a), extension, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, sendAsDocumentsEntities.get(a), editingMessageObject, groupId2, mediaCount == 10 || a == documentsCount - 1, sendAsDocumentsCaptions.get(a), notify, scheduleDate, 0, null, forceDocument, sendMessageChatArguments, effectId, invertMedia, payStars, monoForumPeerId, suggestionParams, null, -1);
+                    int error = prepareSendingDocumentInternal(accountInstance, sendAsDocuments.get(a), sendAsDocumentsOriginal.get(a), sendAsDocumentsUri.get(a), extension, dialogId, replyToMsg, replyToTopMsg, storyItem, quote, sendAsDocumentsEntities.get(a), editingMessageObject, groupId2, mediaCount == 10 || a == documentsCount - 1, sendAsDocumentsCaptions.get(a), notify, scheduleDate, 0, null, forceDocumentFinal, sendMessageChatArguments, effectId, invertMedia, payStars, monoForumPeerId, suggestionParams, null, -1);
                     handleError(error, accountInstance);
                 }
             }
