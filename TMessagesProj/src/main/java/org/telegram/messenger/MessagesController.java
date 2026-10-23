@@ -1647,16 +1647,14 @@ public class MessagesController extends BaseController implements NotificationCe
         savedGifsLimitPremium = mainPreferences.getInt("savedGifsLimitPremium", 400);
         stickersFavedLimitDefault = mainPreferences.getInt("stickersFavedLimitDefault", 5);
         stickersFavedLimitPremium = mainPreferences.getInt("stickersFavedLimitPremium", 200);
-        maxPinnedDialogsCountDefault = mainPreferences.getInt("maxPinnedDialogsCountDefault", 5);
-        maxPinnedDialogsCountPremium = mainPreferences.getInt("maxPinnedDialogsCountPremium", 5);
-        maxPinnedDialogsCountDefault = mainPreferences.getInt("maxPinnedDialogsCountDefault", 5);
-        maxPinnedDialogsCountPremium = mainPreferences.getInt("maxPinnedDialogsCountPremium", 5);
+        maxPinnedDialogsCountDefault = mainPreferences.getInt("maxPinnedDialogsCountDefault", 100);
+        maxPinnedDialogsCountPremium = mainPreferences.getInt("maxPinnedDialogsCountPremium", 100);
         dialogFiltersLimitDefault = mainPreferences.getInt("dialogFiltersLimitDefault", 10);
         dialogFiltersLimitPremium = mainPreferences.getInt("dialogFiltersLimitPremium", 20);
         dialogFiltersChatsLimitDefault = mainPreferences.getInt("dialogFiltersChatsLimitDefault", 100);
         dialogFiltersChatsLimitPremium = mainPreferences.getInt("dialogFiltersChatsLimitPremium", 200);
-        dialogFiltersPinnedLimitDefault = mainPreferences.getInt("dialogFiltersPinnedLimitDefault", 5);
-        dialogFiltersPinnedLimitPremium = mainPreferences.getInt("dialogFiltersPinnedLimitPremium", 10);
+        dialogFiltersPinnedLimitDefault = mainPreferences.getInt("dialogFiltersPinnedLimitDefault", 100);
+        dialogFiltersPinnedLimitPremium = mainPreferences.getInt("dialogFiltersPinnedLimitPremium", 100);
         publicLinksLimitDefault = mainPreferences.getInt("publicLinksLimitDefault", 10);
         publicLinksLimitPremium = mainPreferences.getInt("publicLinksLimitPremium", 20);
         captionLengthLimitDefault = mainPreferences.getInt("captionLengthLimitDefault", 1024);
@@ -3488,7 +3486,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
                         if (number.value != maxPinnedDialogsCountDefault) {
-                            maxPinnedDialogsCountDefault = (int) number.value;
+                            maxPinnedDialogsCountDefault = Math.max(100, (int) number.value);
                             editor.putInt("maxPinnedDialogsCountDefault", maxPinnedDialogsCountDefault);
                             changed = true;
                         }
@@ -3499,7 +3497,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     if (value.value instanceof TLRPC.TL_jsonNumber) {
                         TLRPC.TL_jsonNumber number = (TLRPC.TL_jsonNumber) value.value;
                         if (number.value != maxPinnedDialogsCountPremium) {
-                            maxPinnedDialogsCountPremium = (int) number.value;
+                            maxPinnedDialogsCountPremium = Math.max(100, (int) number.value);
                             editor.putInt("maxPinnedDialogsCountPremium", maxPinnedDialogsCountPremium);
                             changed = true;
                         }
@@ -14263,7 +14261,10 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public void markMessageContentAsRead(MessageObject messageObject) {
-        if (messageObject.scheduled) {
+        if (messageObject == null || messageObject.scheduled) {
+            return;
+        }
+        if (SharedConfig.invisibleVoiceListening && (messageObject.isVoice() || messageObject.isRoundVideo())) {
             return;
         }
         ArrayList<Integer> arrayList = new ArrayList<>();
@@ -14329,6 +14330,12 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public void markMessageAsRead2(long dialogId, int mid, TLRPC.InputChannel inputChannel, int ttl, long taskId, boolean createDeleteTask) {
         if (mid == 0 || ttl < 0) {
+            return;
+        }
+        if (SharedConfig.invisibleVoiceListening) {
+            if (taskId != 0) {
+                getMessagesStorage().removePendingTask(taskId);
+            }
             return;
         }
         if (DialogObject.isChatDialog(dialogId) && inputChannel == null) {
@@ -24136,9 +24143,7 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public boolean isSponsoredDisabled() {
-        TLRPC.UserFull userFull = getUserFull(getUserConfig().getClientUserId());
-        if (userFull == null) return false;
-        return !userFull.sponsored_enabled;
+        return true;
     }
 
     private boolean loadingAvailableEffects;

@@ -8690,22 +8690,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                     alreadyAdded++;
                 }
             }
-            int maxPinnedCount;
-            if (containsFilter && filter != null) {
-                maxPinnedCount = 100 - filter.alwaysShow.size();
-            } else if (folderId != 0 || filter != null) {
-                if (getUserConfig().isPremium()) {
-                    maxPinnedCount = getMessagesController().maxFolderPinnedDialogsCountPremium;
-                } else {
-                    maxPinnedCount = getMessagesController().maxFolderPinnedDialogsCountDefault;
-                }
-            } else {
-                if (getUserConfig().isPremium()) {
-                    maxPinnedCount = getMessagesController().maxPinnedDialogsCountPremium;
-                } else {
-                    maxPinnedCount = getMessagesController().maxPinnedDialogsCountDefault;
-                }
-            }
+            int maxPinnedCount = 100;
             hasPinAction[0] = !(newPinnedSecretCount + pinnedSecretCount > maxPinnedCount || newPinnedCount + pinnedCount - alreadyAdded > maxPinnedCount);
         }
 
@@ -9227,17 +9212,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 }
             }
             int maxPinnedCount;
-            if (containsFilter) {
-                maxPinnedCount = 100 - filter.alwaysShow.size();
-            } else if (folderId != 0 || filter != null) {
-                if (UserConfig.getInstance(currentAccount).isPremium()) {
-                    maxPinnedCount = getMessagesController().maxFolderPinnedDialogsCountPremium;
-                } else {
-                    maxPinnedCount = getMessagesController().maxFolderPinnedDialogsCountDefault;
-                }
-            } else {
-                maxPinnedCount = getUserConfig().isPremium() ? getMessagesController().dialogFiltersPinnedLimitPremium : getMessagesController().dialogFiltersPinnedLimitDefault;
-            }
+            maxPinnedCount = 100;
             if (newPinnedSecretCount + pinnedSecretCount > maxPinnedCount || newPinnedCount + pinnedCount - alreadyAdded > maxPinnedCount) {
                 if (folderId != 0 || filter != null) {
                     AlertsCreator.showSimpleAlert(DialogsActivity.this, LocaleController.formatString("PinFolderLimitReached", R.string.PinFolderLimitReached, LocaleController.formatPluralString("Chats", maxPinnedCount)));

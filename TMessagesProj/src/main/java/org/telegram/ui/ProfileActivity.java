@@ -657,6 +657,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private int phoneRow;
     private int noteRow;
     private int clientGuessRow;
+    private int idAndDcRow;
     private int locationRow;
     private int userInfoRow;
     private int channelInfoRow;
@@ -4660,6 +4661,10 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 editNotes(view, position);
             } else if (position == clientGuessRow) {
                 BulletinFactory.of(this).createSimpleBulletin(R.drawable.msg_info, "Cihaz bilgisi kullanıcının mesaj ve medya verileri analiz edilerek tespit edilmiştir.").show();
+            } else if (position == idAndDcRow) {
+                long targetId = userId != 0 ? userId : chatId;
+                AndroidUtilities.addToClipboard(String.valueOf(targetId));
+                BulletinFactory.of(this).createCopyBulletin("ID panoya kopyalandı: " + targetId).show();
             } else {
                 processOnClickOrPress(position, view, x, y);
             }
@@ -10526,6 +10531,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         phoneRow = -1;
         noteRow = -1;
         clientGuessRow = -1;
+        idAndDcRow = -1;
         userInfoRow = -1;
         locationRow = -1;
         channelInfoRow = -1;
@@ -10742,6 +10748,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 if (user != null && !isBot && userId != getUserConfig().getClientUserId()) {
                     clientGuessRow = rowCount++;
                 }
+                if (userId != 0) {
+                    idAndDcRow = rowCount++;
+                }
                 if (isBot && user != null && user.bot_has_main_app) {
                     botAppRow = rowCount++;
                 }
@@ -10882,6 +10891,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
                 if (ChatObject.isPublic(currentChat)) {
                     usernameRow = rowCount++;
+                }
+                if (currentChat != null) {
+                    idAndDcRow = rowCount++;
                 }
             }
             if (emptyRow < 0 && emptyRow2 < 0) {
@@ -13516,6 +13528,27 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         detailCell.setTextAndValue(text, LocaleController.getString(isFragmentPhoneNumber ? R.string.AnonymousNumber : R.string.PhoneMobile), false);
                     } else if (position == clientGuessRow) {
                         detailCell.setTextAndValue(ClientGuesser.getDeviceStringForUser(userId), "Tahmini İstemci / Cihaz", false);
+                    } else if (position == idAndDcRow) {
+                        long targetId = userId != 0 ? userId : chatId;
+                        int dc = 0;
+                        TLRPC.User targetUser = getMessagesController().getUser(userId);
+                        if (targetUser != null && targetUser.photo != null) {
+                            dc = targetUser.photo.dc_id;
+                        } else if (currentChat != null && currentChat.photo != null) {
+                            dc = currentChat.photo.dc_id;
+                        }
+                        String dcText = getDcName(dc);
+                        String valueStr = String.valueOf(targetId);
+                        if (!TextUtils.isEmpty(dcText)) {
+                            valueStr += " • " + dcText;
+                        }
+                        if (userId != 0) {
+                            String est = getEstimatedRegistration(targetId);
+                            if (!TextUtils.isEmpty(est)) {
+                                valueStr += " • Kayıt: " + est;
+                            }
+                        }
+                        detailCell.setTextAndValue(valueStr, "Telegram ID & Veri Merkezi (DC)", false);
                     } else if (position == noteRow) {
                         final TLRPC.UserFull userInfo = getMessagesController().getUserFull(userId);
                         if (userInfo == null) return;
@@ -14331,7 +14364,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             if (position == infoHeaderRow || position == membersHeaderRow || position == settingsSectionRow2 ||
                     position == numberSectionRow || position == helpHeaderRow || position == debugHeaderRow || position == botPermissionsHeader) {
                 return VIEW_TYPE_HEADER;
-            } else if (position == phoneRow || position == locationRow || position == numberRow || position == birthdayRow || position == clientGuessRow) {
+            } else if (position == phoneRow || position == locationRow || position == numberRow || position == birthdayRow || position == clientGuessRow || position == idAndDcRow) {
                 return VIEW_TYPE_TEXT_DETAIL;
             } else if (position == usernameRow || position == setUsernameRow) {
                 return VIEW_TYPE_TEXT_DETAIL_MULTILINE;
@@ -15732,6 +15765,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             put(++pointer, phoneRow, sparseIntArray);
             put(++pointer, noteRow, sparseIntArray);
             put(++pointer, clientGuessRow, sparseIntArray);
+            put(++pointer, idAndDcRow, sparseIntArray);
             put(++pointer, locationRow, sparseIntArray);
             put(++pointer, userInfoRow, sparseIntArray);
             put(++pointer, channelInfoRow, sparseIntArray);
@@ -17002,6 +17036,38 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         }
     }
 
+    public static String getDcName(int dc) {
+        switch (dc) {
+            case 1:
+                return "DC 1 (Miami, ABD 🇺🇸)";
+            case 2:
+                return "DC 2 (Amsterdam, Hollanda 🇳🇱)";
+            case 3:
+                return "DC 3 (Miami, ABD 🇺🇸)";
+            case 4:
+                return "DC 4 (Amsterdam, Hollanda 🇳🇱)";
+            case 5:
+                return "DC 5 (Singapur 🇸🇬)";
+            default:
+                return dc > 0 ? "DC " + dc : "";
+        }
+    }
+
+    public static String getEstimatedRegistration(long targetId) {
+        if (targetId <= 0) return "";
+        if (targetId < 50000000L) return "2013-2014";
+        if (targetId < 100000000L) return "~2015";
+        if (targetId < 250000000L) return "~2016";
+        if (targetId < 450000000L) return "~2017";
+        if (targetId < 750000000L) return "~2018";
+        if (targetId < 1000000000L) return "~2019";
+        if (targetId < 1400000000L) return "~2020";
+        if (targetId < 2000000000L) return "~2021";
+        if (targetId < 5300000000L) return "~2022-2023";
+        if (targetId < 6800000000L) return "~2023-2024";
+        return "~2025-2026";
+    }
+
     private String getAccountDetails(long targetId, TLRPC.User user) {
         if (targetId <= 0) {
             return "";
@@ -17013,22 +17079,14 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             dc = user.photo.dc_id;
         }
         if (dc != 0) {
-            sb.append(" • DC: ").append(dc);
+            String dcName = getDcName(dc);
+            sb.append(" • ").append(!TextUtils.isEmpty(dcName) ? dcName : "DC " + dc);
         }
         if (userId != 0) {
-            String est;
-            if (targetId < 50000000L) est = "2013-2014";
-            else if (targetId < 100000000L) est = "~2015";
-            else if (targetId < 250000000L) est = "~2016";
-            else if (targetId < 450000000L) est = "~2017";
-            else if (targetId < 750000000L) est = "~2018";
-            else if (targetId < 1000000000L) est = "~2019";
-            else if (targetId < 1400000000L) est = "~2020";
-            else if (targetId < 2000000000L) est = "~2021";
-            else if (targetId < 5300000000L) est = "~2022-2023";
-            else if (targetId < 6800000000L) est = "~2023-2024";
-            else est = "~2025-2026";
-            sb.append(" • Kayıt: ").append(est);
+            String est = getEstimatedRegistration(targetId);
+            if (!TextUtils.isEmpty(est)) {
+                sb.append(" • Kayıt: ").append(est);
+            }
         }
         return sb.toString();
     }

@@ -160,6 +160,8 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
     @Keep
     private int secretWebpageRow;
     private int metadataStripRow;
+    private int forwardWithoutAuthorsRow;
+    private int invisibleVoiceRow;
     private int secretDetailRow;
     private int rowCount;
 
@@ -513,6 +515,18 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 if (view instanceof TextCheckCell) {
                     ((TextCheckCell) view).setChecked(SharedConfig.stripMediaMetadata);
                 }
+            } else if (position == forwardWithoutAuthorsRow) {
+                SharedConfig.forwardWithoutAuthors = !SharedConfig.forwardWithoutAuthors;
+                SharedConfig.saveConfig();
+                if (view instanceof TextCheckCell) {
+                    ((TextCheckCell) view).setChecked(SharedConfig.forwardWithoutAuthors);
+                }
+            } else if (position == invisibleVoiceRow) {
+                SharedConfig.invisibleVoiceListening = !SharedConfig.invisibleVoiceListening;
+                SharedConfig.saveConfig();
+                if (view instanceof TextCheckCell) {
+                    ((TextCheckCell) view).setChecked(SharedConfig.invisibleVoiceListening);
+                }
             } else if (position == contactsDeleteRow) {
                 if (getParentActivity() == null) {
                     return;
@@ -802,6 +816,8 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         secretMapRow = rowCount++;
         secretWebpageRow = rowCount++;
         metadataStripRow = rowCount++;
+        forwardWithoutAuthorsRow = rowCount++;
+        invisibleVoiceRow = rowCount++;
         secretDetailRow = rowCount++;
         if (listAdapter != null && notify) {
             listAdapter.notifyDataSetChanged();
@@ -1028,7 +1044,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
         @Override
         public boolean isEnabled(RecyclerView.ViewHolder holder) {
             int position = holder.getAdapterPosition();
-            return position == passcodeRow || position == passwordRow || position == passkeysRow || position == blockedRow || position == sessionsRow || position == secretWebpageRow || position == metadataStripRow || position == webSessionsRow ||
+            return position == passcodeRow || position == passwordRow || position == passkeysRow || position == blockedRow || position == sessionsRow || position == secretWebpageRow || position == metadataStripRow || position == forwardWithoutAuthorsRow || position == invisibleVoiceRow || position == webSessionsRow ||
                     position == groupsRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_INVITE) ||
                     position == lastSeenRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_LASTSEEN) ||
                     position == callsRow && !getContactsController().getLoadingPrivacyInfo(ContactsController.PRIVACY_RULES_TYPE_CALLS) ||
@@ -1287,7 +1303,11 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                     if (position == secretWebpageRow) {
                         textCheckCell.setTextAndCheck(getString("SecretWebPage", R.string.SecretWebPage), getMessagesController().secretWebpagePreview == 1, true);
                     } else if (position == metadataStripRow) {
-                        textCheckCell.setTextAndCheck("📍 Medya EXIF & GPS Temizleyici", SharedConfig.stripMediaMetadata, false);
+                        textCheckCell.setTextAndCheck("📍 Medya EXIF & GPS Temizleyici", SharedConfig.stripMediaMetadata, true);
+                    } else if (position == forwardWithoutAuthorsRow) {
+                        textCheckCell.setTextAndCheck("🚫 İletilen Mesaj Başlığını Kaldırma (No-Quote)", SharedConfig.forwardWithoutAuthors, true);
+                    } else if (position == invisibleVoiceRow) {
+                        textCheckCell.setTextAndCheck("🎧 Gizli Ses / Yuvarlak Video Dinleme", SharedConfig.invisibleVoiceListening, false);
                     } else if (position == contactsSyncRow) {
                         textCheckCell.setTextAndCheck(getString("SyncContacts", R.string.SyncContacts), newSync, true);
                     } else if (position == contactsSuggestRow) {
@@ -1407,7 +1427,7 @@ public class PrivacySettingsActivity extends BaseFragment implements Notificatio
                 return 1;
             } else if (position == securitySectionRow || position == advancedSectionRow || position == privacySectionRow || position == secretSectionRow || position == botsSectionRow || position == contactsSectionRow || position == newChatsHeaderRow) {
                 return 2;
-            } else if (position == secretWebpageRow || position == metadataStripRow || position == contactsSyncRow || position == contactsSuggestRow || position == newChatsRow) {
+            } else if (position == secretWebpageRow || position == metadataStripRow || position == forwardWithoutAuthorsRow || position == invisibleVoiceRow || position == contactsSyncRow || position == contactsSuggestRow || position == newChatsRow) {
                 return 3;
             } else if (position == botsAndWebsitesShadowRow) {
                 return 4;

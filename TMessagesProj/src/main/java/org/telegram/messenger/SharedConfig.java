@@ -323,6 +323,8 @@ public class SharedConfig {
     public static int proxyRotationTimeout;
     public static boolean proxyKillSwitch;
     public static boolean stripMediaMetadata = true;
+    public static boolean forwardWithoutAuthors = true;
+    public static boolean invisibleVoiceListening = true;
     public static int messageSeenHintCount;
     public static int emojiInteractionsHintCount;
     public static int dayNightThemeSwitchHintCount;
@@ -476,6 +478,8 @@ public class SharedConfig {
                 editor.putInt("proxyRotationTimeout", proxyRotationTimeout);
                 editor.putBoolean("proxyKillSwitch", proxyKillSwitch);
                 editor.putBoolean("stripMediaMetadata", stripMediaMetadata);
+                editor.putBoolean("forwardWithoutAuthors", forwardWithoutAuthors);
+                editor.putBoolean("invisibleVoiceListening", invisibleVoiceListening);
 
                 if (pendingAppUpdate != null) {
                     try {
@@ -546,6 +550,8 @@ public class SharedConfig {
             proxyRotationTimeout = preferences.getInt("proxyRotationTimeout", ProxyRotationController.DEFAULT_TIMEOUT_INDEX);
             proxyKillSwitch = preferences.getBoolean("proxyKillSwitch", false);
             stripMediaMetadata = preferences.getBoolean("stripMediaMetadata", true);
+            forwardWithoutAuthors = preferences.getBoolean("forwardWithoutAuthors", true);
+            invisibleVoiceListening = preferences.getBoolean("invisibleVoiceListening", true);
             String authKeyString = preferences.getString("pushAuthKey", null);
             if (!TextUtils.isEmpty(authKeyString)) {
                 pushAuthKey = Base64.decode(authKeyString, Base64.DEFAULT);

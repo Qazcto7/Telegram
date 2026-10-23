@@ -2239,6 +2239,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         if (messages == null || messages.isEmpty()) {
             return 0;
         }
+        if (SharedConfig.forwardWithoutAuthors) {
+            forwardFromMyName = true;
+        }
         int sendResult = 0;
         long myId = getUserConfig().getClientUserId();
         boolean isChannel = false;
