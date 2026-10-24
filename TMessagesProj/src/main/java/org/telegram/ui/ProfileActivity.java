@@ -13532,9 +13532,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                         long targetId = userId != 0 ? userId : chatId;
                         int dc = 0;
                         TLRPC.User targetUser = getMessagesController().getUser(userId);
-                        if (targetUser == null) {
-                            targetUser = user;
-                        }
                         if (targetUser != null && targetUser.photo != null) {
                             dc = targetUser.photo.dc_id;
                         } else if (currentChat != null && currentChat.photo != null) {
