@@ -34540,6 +34540,24 @@ public class ChatActivity extends BaseFragment implements
         showDialog(builder.create());
     }
 
+    private String getMessageSenderName(MessageObject m) {
+        if (m == null) {
+            return "Bilinmeyen";
+        }
+        if (m.isOut()) {
+            return "Siz";
+        }
+        long senderId = m.getSenderId();
+        String name = getMessagesController().getFullName(senderId);
+        if (TextUtils.isEmpty(name)) {
+            TLRPC.Chat chat = getMessagesController().getChat(-senderId);
+            if (chat != null) {
+                name = chat.title;
+            }
+        }
+        return !TextUtils.isEmpty(name) ? name : "Bilinmeyen";
+    }
+
     private void showDeletedMessagesLog() {
         if (getParentActivity() == null) {
             return;
@@ -34587,8 +34605,8 @@ public class ChatActivity extends BaseFragment implements
             CharSequence[] items = new CharSequence[combinedList.size()];
             for (int i = 0; i < combinedList.size(); i++) {
                 MessageObject m = combinedList.get(i);
-                String sender = m.getSenderName() != null ? m.getSenderName() : "Bilinmeyen";
-                String time = m.messageOwner != null ? LocaleController.formatDateTime(m.messageOwner.date) : "";
+                String sender = getMessageSenderName(m);
+                String time = m.messageOwner != null ? LocaleController.formatDateTime(m.messageOwner.date, false) : "";
                 String rawText = m.messageOwner != null && m.messageOwner.message != null ? m.messageOwner.message : "";
                 String cleanText = rawText.startsWith("[Silindi] ") ? rawText.substring(10) : (rawText.equals("[Silindi]") ? "(Medya veya boş içerik)" : rawText);
                 items[i] = "[" + time + "] " + sender + ":\n" + (cleanText.length() > 60 ? cleanText.substring(0, 60) + "..." : cleanText);
@@ -34599,8 +34617,8 @@ public class ChatActivity extends BaseFragment implements
             builder.setItems(items, (dialog, which) -> {
                 if (which >= 0 && which < combinedList.size()) {
                     MessageObject selected = combinedList.get(which);
-                    String sender = selected.getSenderName() != null ? selected.getSenderName() : "Bilinmeyen";
-                    String time = selected.messageOwner != null ? LocaleController.formatDateTime(selected.messageOwner.date) : "";
+                    String sender = getMessageSenderName(selected);
+                    String time = selected.messageOwner != null ? LocaleController.formatDateTime(selected.messageOwner.date, false) : "";
                     String rawText = selected.messageOwner != null && selected.messageOwner.message != null ? selected.messageOwner.message : "";
                     final String cleanText = rawText.startsWith("[Silindi] ") ? rawText.substring(10) : rawText;
 
@@ -34621,8 +34639,8 @@ public class ChatActivity extends BaseFragment implements
             builder.setPositiveButton("Tümünü Kopyala", (dialog, which) -> {
                 StringBuilder all = new StringBuilder();
                 for (MessageObject m : combinedList) {
-                    String sender = m.getSenderName() != null ? m.getSenderName() : "Bilinmeyen";
-                    String time = m.messageOwner != null ? LocaleController.formatDateTime(m.messageOwner.date) : "";
+                    String sender = getMessageSenderName(m);
+                    String time = m.messageOwner != null ? LocaleController.formatDateTime(m.messageOwner.date, false) : "";
                     String rawText = m.messageOwner != null && m.messageOwner.message != null ? m.messageOwner.message : "";
                     String cleanText = rawText.startsWith("[Silindi] ") ? rawText.substring(10) : rawText;
                     all.append("[").append(time).append("] ").append(sender).append(":\n").append(cleanText).append("\n\n");
