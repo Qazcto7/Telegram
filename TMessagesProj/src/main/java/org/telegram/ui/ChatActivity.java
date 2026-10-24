@@ -33925,7 +33925,7 @@ public class ChatActivity extends BaseFragment implements
             case OPTION_MARK_AS_READ: {
                 if (selectedObject != null) {
                     getMessagesController().forceMarkDialogAsRead(dialog_id, selectedObject.getId());
-                    BulletinFactory.of(this).createSimpleBulletin(R.drawable.msg_check, "Okundu bilgisi iletildi").show();
+                    BulletinFactory.of(this).createSimpleBulletin(R.drawable.msg_markread, "Okundu bilgisi iletildi").show();
                 }
                 selectedObject = null;
                 selectedObjectGroup = null;
@@ -46449,7 +46449,7 @@ public class ChatActivity extends BaseFragment implements
                 if (selectedObject != null && !selectedObject.isOut()) {
                     items.add("Mavi Tik / Okundu Gönder");
                     options.add(OPTION_MARK_AS_READ);
-                    icons.add(R.drawable.msg_check);
+                    icons.add(R.drawable.msg_markread);
                 }
                 if (ChatObject.isMonoForum(currentChat) && selectedObject.getGroupId() == 0 && selectedObjectGroup == null && message != null && message.messageOwner != null && message.messageOwner.suggested_post == null && message.messageOwner.action == null) {
                     items.add(LocaleController.getString(R.string.EditOfferAdd));
