@@ -33925,6 +33925,9 @@ public class ChatActivity extends BaseFragment implements
             case OPTION_MARK_AS_READ: {
                 if (selectedObject != null) {
                     getMessagesController().forceMarkDialogAsRead(dialog_id, selectedObject.getId());
+                    if (selectedObject.messageOwner != null) {
+                        selectedObject.messageOwner.unread = false;
+                    }
                     BulletinFactory.of(this).createSimpleBulletin(R.drawable.msg_markread, "Okundu bilgisi iletildi").show();
                 }
                 selectedObject = null;

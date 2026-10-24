@@ -2337,7 +2337,6 @@ public class EmojiView extends FrameLayout implements
                     //if (pack != null) {
                     //    delegate.onShowStickerSet(pack.set, null, false);
                     //    return;
-                    //}
                 }
                 if (!(view instanceof StickerEmojiCell)) {
                     return;

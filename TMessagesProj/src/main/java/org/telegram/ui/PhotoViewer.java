@@ -14889,15 +14889,9 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             } else if (isEvent) {
                 title = getString(R.string.AttachPhoto);
             }
-            final boolean noforwards = false;
-            if (noforwards) {
-                galleryButton.setVisibility(View.GONE);
-                galleryGap.setVisibility(View.GONE);
-            } else {
-                galleryButton.setVisibility(View.VISIBLE);
-                galleryGap.setVisibility(View.VISIBLE);
-            }
-            allowShare = !noforwards;
+            galleryButton.setVisibility(View.VISIBLE);
+            galleryGap.setVisibility(View.VISIBLE);
+            allowShare = true;
             menuItem.showSubItem(gallery_menu_share);
             menuItem.checkHideMenuItem();
             groupedPhotosListView.fillList();

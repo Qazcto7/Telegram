@@ -42,10 +42,12 @@ jobs:
 
       - name: Configure Swap & Memory
         run: |
-          sudo fallocate -l 6G /swapfile || true
-          sudo chmod 600 /swapfile || true
-          sudo mkswap /swapfile || true
-          sudo swapon /swapfile || true
+          if [ ! -f /mnt/swapfile ]; then
+            sudo fallocate -l 6G /mnt/swapfile || sudo dd if=/dev/zero of=/mnt/swapfile bs=1M count=6144 || true
+            sudo chmod 600 /mnt/swapfile || true
+            sudo mkswap /mnt/swapfile || true
+            sudo swapon /mnt/swapfile || true
+          fi
           free -h
 
       - name: Build APK

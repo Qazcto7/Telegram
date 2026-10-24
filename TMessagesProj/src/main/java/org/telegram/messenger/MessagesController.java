@@ -14596,10 +14596,13 @@ public class MessagesController extends BaseController implements NotificationCe
         } else {
             TLRPC.InputPeer inputPeer = getInputPeer(dialogId);
             if (inputPeer instanceof TLRPC.TL_inputPeerChannel) {
-                TLRPC.TL_channels_readHistory request = new TLRPC.TL_channels_readHistory();
-                request.channel = getInputChannel(-dialogId);
-                request.max_id = maxId;
-                getConnectionsManager().sendRequest(request, null);
+                TLRPC.InputChannel inputChannel = getInputChannel(-dialogId);
+                if (inputChannel != null) {
+                    TLRPC.TL_channels_readHistory request = new TLRPC.TL_channels_readHistory();
+                    request.channel = inputChannel;
+                    request.max_id = maxId;
+                    getConnectionsManager().sendRequest(request, null);
+                }
             } else if (inputPeer != null) {
                 TLRPC.TL_messages_readHistory request = new TLRPC.TL_messages_readHistory();
                 request.peer = inputPeer;
