@@ -1249,6 +1249,7 @@ public class ChatActivity extends BaseFragment implements
     public final static int OPTION_SPEED_PROMO = 103;
     public final static int OPTION_OPEN_PROFILE = 104;
     public final static int OPTION_VIEW_EDIT_HISTORY = 199;
+    public final static int OPTION_MARK_AS_READ = 201;
     public final static int OPTION_FACT_CHECK = 106;
     public final static int OPTION_EDIT_PRICE = 107;
     public final static int OPTION_GIFT = 108;
@@ -33921,6 +33922,16 @@ public class ChatActivity extends BaseFragment implements
                 selectedObjectToEditCaption = null;
                 break;
             }
+            case OPTION_MARK_AS_READ: {
+                if (selectedObject != null) {
+                    getMessagesController().forceMarkDialogAsRead(dialog_id, selectedObject.getId());
+                    BulletinFactory.of(this).createSimpleBulletin(R.drawable.msg_check, "Okundu bilgisi iletildi").show();
+                }
+                selectedObject = null;
+                selectedObjectGroup = null;
+                selectedObjectToEditCaption = null;
+                break;
+            }
             case OPTION_EDIT_PRICE: {
                 final MessageObject msg = selectedObject;
                 TLRPC.TL_messageMediaPaidMedia paidMedia = (TLRPC.TL_messageMediaPaidMedia) selectedObject.messageOwner.media;
@@ -46434,6 +46445,11 @@ public class ChatActivity extends BaseFragment implements
                     items.add("Düzenleme Geçmişi");
                     options.add(OPTION_VIEW_EDIT_HISTORY);
                     icons.add(R.drawable.msg_edit);
+                }
+                if (selectedObject != null && !selectedObject.isOut()) {
+                    items.add("Mavi Tik / Okundu Gönder");
+                    options.add(OPTION_MARK_AS_READ);
+                    icons.add(R.drawable.msg_check);
                 }
                 if (ChatObject.isMonoForum(currentChat) && selectedObject.getGroupId() == 0 && selectedObjectGroup == null && message != null && message.messageOwner != null && message.messageOwner.suggested_post == null && message.messageOwner.action == null) {
                     items.add(LocaleController.getString(R.string.EditOfferAdd));

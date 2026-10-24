@@ -3026,6 +3026,9 @@ public class AndroidUtilities {
     }
 
     public static int getPhotoSize(boolean highQuality) {
+        if (SharedConfig.sendOriginalMediaQuality) {
+            return 3840;
+        }
         if (highQuality) {
             if (highQualityPhotoSize == null) {
                 highQualityPhotoSize = 2560;

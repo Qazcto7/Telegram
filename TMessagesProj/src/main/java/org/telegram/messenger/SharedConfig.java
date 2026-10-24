@@ -329,6 +329,11 @@ public class SharedConfig {
     public static boolean ghostStories = true;
     public static boolean silentScreenshot = true;
     public static boolean freezeLastSeen = true;
+    public static boolean stealthRead = true;
+    public static boolean antiTyping = true;
+    public static boolean freePremiumEmoji = true;
+    public static boolean sendOriginalMediaQuality = true;
+    public static boolean deleteForAllByDefault = true;
     public static int messageSeenHintCount;
     public static int emojiInteractionsHintCount;
     public static int dayNightThemeSwitchHintCount;
@@ -488,6 +493,11 @@ public class SharedConfig {
                 editor.putBoolean("ghostStories", ghostStories);
                 editor.putBoolean("silentScreenshot", silentScreenshot);
                 editor.putBoolean("freezeLastSeen", freezeLastSeen);
+                editor.putBoolean("stealthRead", stealthRead);
+                editor.putBoolean("antiTyping", antiTyping);
+                editor.putBoolean("freePremiumEmoji", freePremiumEmoji);
+                editor.putBoolean("sendOriginalMediaQuality", sendOriginalMediaQuality);
+                editor.putBoolean("deleteForAllByDefault", deleteForAllByDefault);
 
                 if (pendingAppUpdate != null) {
                     try {
@@ -564,6 +574,11 @@ public class SharedConfig {
             ghostStories = preferences.getBoolean("ghostStories", true);
             silentScreenshot = preferences.getBoolean("silentScreenshot", true);
             freezeLastSeen = preferences.getBoolean("freezeLastSeen", true);
+            stealthRead = preferences.getBoolean("stealthRead", true);
+            antiTyping = preferences.getBoolean("antiTyping", true);
+            freePremiumEmoji = preferences.getBoolean("freePremiumEmoji", true);
+            sendOriginalMediaQuality = preferences.getBoolean("sendOriginalMediaQuality", true);
+            deleteForAllByDefault = preferences.getBoolean("deleteForAllByDefault", true);
             String authKeyString = preferences.getString("pushAuthKey", null);
             if (!TextUtils.isEmpty(authKeyString)) {
                 pushAuthKey = Base64.decode(authKeyString, Base64.DEFAULT);

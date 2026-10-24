@@ -2691,7 +2691,7 @@ public class AlertsCreator {
             revokeTimeLimit = MessagesController.getInstance(account).revokeTimeLimit;
         }
         boolean canDeleteInbox = !secret && user != null && canRevokeInbox && revokeTimeLimit == 0x7fffffff;
-        final boolean[] deleteForAll = new boolean[1];
+        final boolean[] deleteForAll = new boolean[]{SharedConfig.deleteForAllByDefault};
         boolean deleteChatForAll = false;
 
         boolean lastMessageIsJoined = false;
@@ -2758,7 +2758,7 @@ public class AlertsCreator {
                 updateText.run();
             });
 
-            if (forceDeleteForAll) {
+            if (forceDeleteForAll || (SharedConfig.deleteForAllByDefault && user != null)) {
                 cell[0].setChecked(deleteForAll[0] = true, false);
                 updateText.run();
             }
@@ -7907,7 +7907,7 @@ public class AlertsCreator {
             }
         }
 
-        final boolean[] deleteForAll = new boolean[1];
+        final boolean[] deleteForAll = new boolean[]{SharedConfig.deleteForAllByDefault};
         boolean canRevokeInbox = user != null && MessagesController.getInstance(currentAccount).canRevokePmInbox;
         int revokeTimeLimit;
         if (user != null) {
@@ -8050,6 +8050,7 @@ public class AlertsCreator {
                     cell.setText(LocaleController.getString(R.string.DeleteMessagesOption), "", false, false);
                 }
                 cell.setPadding(LocaleController.isRTL ? dp(16) : dp(8), 0, LocaleController.isRTL ? dp(8) : dp(16), 0);
+                cell.setChecked(deleteForAll[0], false);
                 frameLayout.addView(cell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP | Gravity.LEFT, 0, 0, 0, 0));
                 cell.setOnClickListener(v -> {
                     CheckBoxCell cell12 = (CheckBoxCell) v;
@@ -8109,6 +8110,7 @@ public class AlertsCreator {
                     cell.setText(LocaleController.getString(R.string.DeleteMessagesOption), "", false, false);
                 }
                 cell.setPadding(LocaleController.isRTL ? dp(16) : dp(8), 0, LocaleController.isRTL ? dp(8) : dp(16), 0);
+                cell.setChecked(deleteForAll[0], false);
                 frameLayout.addView(cell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.TOP | Gravity.LEFT, 0, 0, 0, 0));
                 cell.setOnClickListener(v -> {
                     CheckBoxCell cell1 = (CheckBoxCell) v;

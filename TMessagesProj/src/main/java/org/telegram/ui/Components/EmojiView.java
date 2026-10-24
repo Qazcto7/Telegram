@@ -1385,7 +1385,7 @@ public class EmojiView extends FrameLayout implements
                 if (emoticon == null && document != null) {
                     emoticon = MessageObject.findAnimatedEmojiEmoticon(document);
                 }
-                if (!MessageObject.isFreeEmoji(document) && !UserConfig.getInstance(currentAccount).isPremium() && !(delegate != null && delegate.isUserSelf()) && !allowEmojisForNonPremium && !isGroupEmojis) {
+                if (!MessageObject.isFreeEmoji(document) && !UserConfig.getInstance(currentAccount).isPremium() && !(delegate != null && delegate.isUserSelf()) && !allowEmojisForNonPremium && !SharedConfig.freePremiumEmoji && !isGroupEmojis) {
                     showBottomTab(false, true);
                     BulletinFactory factory = fragment != null ? BulletinFactory.of(fragment) : BulletinFactory.of(bulletinContainer, resourcesProvider);
                     if (premiumBulletin || fragment == null) {
@@ -1845,7 +1845,7 @@ public class EmojiView extends FrameLayout implements
 
             @Override
             protected boolean allowEmojisForNonPremium() {
-                return allowEmojisForNonPremium;
+                return allowEmojisForNonPremium || SharedConfig.freePremiumEmoji;
             }
 
             @Override
@@ -2343,7 +2343,7 @@ public class EmojiView extends FrameLayout implements
                     return;
                 }
                 StickerEmojiCell cell = (StickerEmojiCell) view;
-                if (cell.getSticker() != null && MessageObject.isPremiumSticker(cell.getSticker()) && !AccountInstance.getInstance(currentAccount).getUserConfig().isPremium()) {
+                if (cell.getSticker() != null && MessageObject.isPremiumSticker(cell.getSticker()) && !AccountInstance.getInstance(currentAccount).getUserConfig().isPremium() && !SharedConfig.freePremiumEmoji) {
                     ContentPreviewViewer.getInstance().showMenuFor(cell);
                     return;
                 }
@@ -3686,7 +3686,7 @@ public class EmojiView extends FrameLayout implements
                 }
                 clipBottom += AndroidUtilities.dp(6);
 
-                float lockT = premiumT.set(UserConfig.getInstance(currentAccount).isPremium() || allowEmojisForNonPremium ? 0f : 1f); // CubicBezierInterpolator.EASE_OUT_QUINT.getInterpolation(Math.min(now - appearTime, 550) / 550f);
+                float lockT = premiumT.set(UserConfig.getInstance(currentAccount).isPremium() || allowEmojisForNonPremium || SharedConfig.freePremiumEmoji ? 0f : 1f); // CubicBezierInterpolator.EASE_OUT_QUINT.getInterpolation(Math.min(now - appearTime, 550) / 550f);
 
                 int positionInGroup = childPosition - start;
                 float top;
@@ -4279,7 +4279,7 @@ public class EmojiView extends FrameLayout implements
             }
             int state = BUTTON_STATE_EMPTY;
             boolean installed = pack.installed || installedEmojiSets.contains(pack.set.id);
-            if (!pack.free && !UserConfig.getInstance(currentAccount).isPremium() && !allowEmojisForNonPremium) {
+            if (!pack.free && !UserConfig.getInstance(currentAccount).isPremium() && !allowEmojisForNonPremium && !SharedConfig.freePremiumEmoji) {
                 state = BUTTON_STATE_LOCKED;
             } else if (pack.featured) {
                 if (installed) {
@@ -4405,7 +4405,7 @@ public class EmojiView extends FrameLayout implements
                 outRect.left = AndroidUtilities.dp(5);
                 outRect.right = AndroidUtilities.dp(5);
                 int position = parent.getChildAdapterPosition(view);
-                if (position + 1 > emojiAdapter.plainEmojisCount && !UserConfig.getInstance(currentAccount).isPremium() && !allowEmojisForNonPremium) {
+                if (position + 1 > emojiAdapter.plainEmojisCount && !UserConfig.getInstance(currentAccount).isPremium() && !allowEmojisForNonPremium && !SharedConfig.freePremiumEmoji) {
                     outRect.top = AndroidUtilities.dp(10);
                 }
             } else if (view instanceof RecyclerListView || view instanceof EmojiPackHeader) {
@@ -7583,7 +7583,7 @@ public class EmojiView extends FrameLayout implements
                 frozenEmojiPacks = new ArrayList<>(mediaDataController.getStickerSets(MediaDataController.TYPE_EMOJIPACKS));
             }
             ArrayList<TLRPC.TL_messages_stickerSet> installedEmojipacks = frozenEmojiPacks;
-            boolean isPremium = UserConfig.getInstance(currentAccount).isPremium() || allowEmojisForNonPremium;
+            boolean isPremium = UserConfig.getInstance(currentAccount).isPremium() || allowEmojisForNonPremium || SharedConfig.freePremiumEmoji;
             int index = 0;
 
             if (info != null && info.emojiset != null) {
@@ -7724,7 +7724,7 @@ public class EmojiView extends FrameLayout implements
             int start = packStartPosition.get(index);
             expandedEmojiSets.add(pack.set.id);
 
-            boolean isPremium = UserConfig.getInstance(currentAccount).isPremium() || allowEmojisForNonPremium;
+            boolean isPremium = UserConfig.getInstance(currentAccount).isPremium() || allowEmojisForNonPremium || SharedConfig.freePremiumEmoji;
             int maxlen = emojiLayoutManager.getSpanCount() * 3;
             int fromCount = ((pack.installed && !pack.featured) && (pack.free || isPremium) || pack.expanded ? pack.documents.size() : Math.min(maxlen, pack.documents.size()));
             Integer from = null, count = null;
@@ -7775,7 +7775,7 @@ public class EmojiView extends FrameLayout implements
             packStartPosition.clear();
             rowHashCodes.clear();
             itemCount = 0;
-            boolean isPremium = UserConfig.getInstance(currentAccount).isPremium() || allowEmojisForNonPremium;
+            boolean isPremium = UserConfig.getInstance(currentAccount).isPremium() || allowEmojisForNonPremium || SharedConfig.freePremiumEmoji;
             if (needEmojiSearch) {
                 itemCount++;
                 rowHashCodes.add(-1);
