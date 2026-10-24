@@ -4777,6 +4777,40 @@ public class ChatActivityEnterView extends FrameLayout implements
     }
 
     private ActionBarMenuSubItem actionScheduleButton;
+    private ActionBarMenuSubItem translateAndSendButton;
+
+    private void showTranslateAndSendDialog() {
+        if (messageEditText == null || TextUtils.isEmpty(messageEditText.getText()) || parentActivity == null) {
+            return;
+        }
+        final String originalText = messageEditText.getText().toString();
+        String[] languages = new String[]{"İngilizce (en)", "Türkçe (tr)", "Rusça (ru)", "Almanca (de)", "İspanyolca (es)", "Fransızca (fr)", "Arapça (ar)", "Farsça (fa)"};
+        String[] codes = new String[]{"en", "tr", "ru", "de", "es", "fr", "ar", "fa"};
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(parentActivity);
+        builder.setTitle("🌐 Çevir ve Gönder - Hedef Dil");
+        builder.setItems(languages, (dialog, which) -> {
+            if (which >= 0 && which < codes.length) {
+                final String targetLang = codes[which];
+                TranslateAlert2.alternativeTranslate(originalText, null, targetLang, (translated, rateLimit) -> {
+                    AndroidUtilities.runOnUIThread(() -> {
+                        if (!TextUtils.isEmpty(translated)) {
+                            messageEditText.setText(translated);
+                            messageEditText.setSelection(translated.length());
+                            sendMessageInternal(true, 0, 0, 0, true);
+                        } else if (parentFragment != null) {
+                            BulletinFactory.of(parentFragment).createErrorBulletin("Çeviri yapılamadı").show();
+                        }
+                    });
+                });
+            }
+        });
+        builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+        if (parentFragment != null) {
+            parentFragment.showDialog(builder.create());
+        }
+    }
+
     private boolean onSendLongClick(View view) {
         if (isInScheduleMode() || parentFragment != null && parentFragment.getChatMode() == ChatActivity.MODE_QUICK_REPLIES || animatorEphemeralMessageVisibility.getValue()) {
             return false;
@@ -4861,6 +4895,16 @@ public class ChatActivityEnterView extends FrameLayout implements
                     });
                     sendPopupLayout.addView(sendWithoutSoundButton, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, DEFAULT_HEIGHT));
                 }
+                translateAndSendButton = new ActionBarMenuSubItem(getContext(), false, true, resourcesProvider);
+                translateAndSendButton.setTextAndIcon("Çevir ve Gönder", R.drawable.msg_translate);
+                translateAndSendButton.setMinimumWidth(dp(196));
+                translateAndSendButton.setOnClickListener(v -> {
+                    if (sendPopupWindow != null && sendPopupWindow.isShowing()) {
+                        sendPopupWindow.dismiss();
+                    }
+                    showTranslateAndSendDialog();
+                });
+                sendPopupLayout.addView(translateAndSendButton, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, DEFAULT_HEIGHT));
                 sendPopupLayout.setupRadialSelectors(getThemedColor(Theme.key_dialogButtonSelector));
 
                 sendPopupWindow = new ActionBarPopupWindow(sendPopupLayout, LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT) {
@@ -4894,6 +4938,10 @@ public class ChatActivityEnterView extends FrameLayout implements
                 } else {
                     sendWhenOnlineButton.setVisibility(GONE);
                 }
+            }
+            if (translateAndSendButton != null) {
+                boolean hasText = messageEditText != null && !TextUtils.isEmpty(messageEditText.getText());
+                translateAndSendButton.setVisibility(hasText ? View.VISIBLE : View.GONE);
             }
             sendPopupLayout.measure(MeasureSpec.makeMeasureSpec(dp(1000), MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(dp(1000), MeasureSpec.AT_MOST));
             sendPopupWindow.setFocusable(true);

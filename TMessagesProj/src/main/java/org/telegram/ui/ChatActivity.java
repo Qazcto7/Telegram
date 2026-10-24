@@ -1704,8 +1704,10 @@ public class ChatActivity extends BaseFragment implements
     private final static int charge_fee = 72;
 
     private final static int chat_menu_topic_create = 73;
+    private final static int text_translate = 75;
 
     private final static int id_chat_compose_panel = 1000;
+    private final static int chat_menu_deleted_log = 1001;
 
     RecyclerListView.OnItemLongClickListenerExtended onItemLongClickListener = new RecyclerListView.OnItemLongClickListenerExtended() {
         @Override
@@ -3943,6 +3945,8 @@ public class ChatActivity extends BaseFragment implements
                     } else {
                         getNotificationCenter().postNotificationName(NotificationCenter.openBoostForUsersDialog, dialog_id);
                     }
+                } else if (id == chat_menu_deleted_log) {
+                    showDeletedMessagesLog();
                 } else if (id == report) {
                     ReportBottomSheet.openChat(ChatActivity.this);
                 } else if (id == star) {
@@ -4060,6 +4064,38 @@ public class ChatActivity extends BaseFragment implements
                     if (chatActivityEnterView != null && chatActivityEnterView.getEditField() != null) {
                         chatActivityEnterView.getEditField().setSelectionOverride(editTextStart, editTextEnd);
                         chatActivityEnterView.getEditField().makeSelectedRegular();
+                    }
+                } else if (id == text_translate) {
+                    if (chatActivityEnterView != null && chatActivityEnterView.getEditField() != null && getParentActivity() != null) {
+                        final org.telegram.ui.Components.EditTextCaption editField = chatActivityEnterView.getEditField();
+                        CharSequence text = editField.getText();
+                        if (text != null && editTextStart >= 0 && editTextEnd <= text.length() && editTextStart < editTextEnd) {
+                            final String selected = text.subSequence(editTextStart, editTextEnd).toString();
+                            final int start = editTextStart;
+                            final int end = editTextEnd;
+                            String[] languages = new String[]{"İngilizce (en)", "Türkçe (tr)", "Rusça (ru)", "Almanca (de)", "İspanyolca (es)", "Fransızca (fr)", "Arapça (ar)"};
+                            String[] codes = new String[]{"en", "tr", "ru", "de", "es", "fr", "ar"};
+                            AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+                            builder.setTitle("🌐 Seçili Metni Çevir");
+                            builder.setItems(languages, (dialog, which) -> {
+                                if (which >= 0 && which < codes.length) {
+                                    final String targetLang = codes[which];
+                                    org.telegram.ui.Components.TranslateAlert2.alternativeTranslate(selected, null, targetLang, (translated, rateLimit) -> {
+                                        AndroidUtilities.runOnUIThread(() -> {
+                                            if (!TextUtils.isEmpty(translated)) {
+                                                android.text.Editable editable = editField.getText();
+                                                if (editable != null && start <= editable.length() && end <= editable.length()) {
+                                                    editable.replace(start, end, translated);
+                                                    BulletinFactory.of(ChatActivity.this).createSimpleBulletin(R.drawable.msg_translate, "Metin çevrildi").show();
+                                                }
+                                            }
+                                        });
+                                    });
+                                }
+                            });
+                            builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+                            showDialog(builder.create());
+                        }
                     }
                 } else if (id == change_colors) {
                     showChatThemeBottomSheet();
@@ -4484,6 +4520,7 @@ public class ChatActivity extends BaseFragment implements
             if (!isTopic && !ChatObject.isMonoForum(currentChat)) {
                 clearHistoryItem = headerItem.lazilyAddSubItem(clear_history, R.drawable.msg_clear,
                     LocaleController.getString(UserObject.isBotForum(currentUser) ? R.string.ClearAllHistory : R.string.ClearHistory));
+                headerItem.lazilyAddSubItem(chat_menu_deleted_log, R.drawable.msg_delete, "Silinen Mesajlar Günlüğü");
             }
             boolean addedSettings = false;
             if (!isTopic) {
@@ -9874,18 +9911,13 @@ public class ChatActivity extends BaseFragment implements
         translateButton = new TranslateButton(getContext(), this, themeDelegate) {
             @Override
             protected void onButtonClick() {
-                if (getUserConfig().isPremium() || currentChat != null && currentChat.autotranslation) {
-                    getMessagesController().getTranslateController().toggleTranslatingDialog(getDialogId());
-                } else {
-                    MessagesController.getNotificationsSettings(currentAccount).edit().putInt("dialog_show_translate_count" + getDialogId(), 14).commit();
-                    showDialog(new PremiumFeatureBottomSheet(ChatActivity.this, PremiumPreviewFragment.PREMIUM_FEATURE_TRANSLATIONS, false));
-                }
+                getMessagesController().getTranslateController().toggleTranslatingDialog(getDialogId());
                 updateTopPanel(true);
             }
 
             @Override
             protected void onCloseClick() {
-                MessagesController.getNotificationsSettings(currentAccount).edit().putInt("dialog_show_translate_count" + getDialogId(), 140).commit();
+                getMessagesController().getTranslateController().setHideTranslateDialog(getDialogId(), true, true);
                 updateTopPanel(true);
             }
         };
@@ -10960,6 +10992,7 @@ public class ChatActivity extends BaseFragment implements
             item.addSubItem(text_date, LocaleController.getString(R.string.FormattedDate));
         }
         item.addSubItem(text_regular, LocaleController.getString(R.string.Regular));
+        item.addSubItem(text_translate, "Çevir");
 
         filledEditTextItemMenu = true;
     }
@@ -29247,9 +29280,7 @@ public class ChatActivity extends BaseFragment implements
 
         boolean showRestartTopic = !isInPreviewMode() && forumTopic != null && forumTopic.closed && !forumTopic.hidden && ChatObject.canManageTopic(currentAccount, currentChat, forumTopic);
         boolean showTranslate = (
-            getUserConfig().isPremium() || currentChat != null && currentChat.autotranslation ?
-                getMessagesController().getTranslateController().isDialogTranslatable(getDialogId()) && !getMessagesController().getTranslateController().isTranslateDialogHidden(getDialogId()) :
-                !getMessagesController().premiumFeaturesBlocked() && preferences.getInt("dialog_show_translate_count" + did, 5) <= 0
+            getMessagesController().getTranslateController().isDialogTranslatable(getDialogId()) && !getMessagesController().getTranslateController().isTranslateDialogHidden(getDialogId())
         ) || DEBUG_TOP_PANELS;
         boolean showAddProfilePicture = UserObject.isBot(currentUser) && currentUser.bot_can_edit && currentUser.photo == null;
         boolean showBizBot = currentEncryptedChat == null && getUserConfig().isPremium() && preferences.getLong("dialog_botid" + did, 0) != 0 || DEBUG_TOP_PANELS;
@@ -34507,6 +34538,101 @@ public class ChatActivity extends BaseFragment implements
         });
         builder.setNegativeButton(LocaleController.getString(R.string.Close), null);
         showDialog(builder.create());
+    }
+
+    private void showDeletedMessagesLog() {
+        if (getParentActivity() == null) {
+            return;
+        }
+        ArrayList<MessageObject> combinedList = new ArrayList<>();
+        HashSet<Integer> seenIds = new HashSet<>();
+        if (messages != null) {
+            for (int i = 0; i < messages.size(); i++) {
+                MessageObject m = messages.get(i);
+                if (m != null && m.messageOwner != null && (m.deleted || (m.messageOwner.message != null && m.messageOwner.message.startsWith("[Silindi]")))) {
+                    if (!seenIds.contains(m.getId())) {
+                        seenIds.add(m.getId());
+                        combinedList.add(m);
+                    }
+                }
+            }
+        }
+        getMessagesStorage().getDeletedMessages(dialog_id, dbList -> {
+            if (getParentActivity() == null) {
+                return;
+            }
+            if (dbList != null) {
+                for (int i = 0; i < dbList.size(); i++) {
+                    MessageObject m = dbList.get(i);
+                    if (m != null && !seenIds.contains(m.getId())) {
+                        seenIds.add(m.getId());
+                        combinedList.add(m);
+                    }
+                }
+            }
+            if (combinedList.isEmpty()) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+                builder.setTitle("🗑️ Silinen Mesajlar Günlüğü");
+                builder.setMessage("Bu sohbette henüz silinen mesaj kaydedilmedi.");
+                builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
+                showDialog(builder.create());
+                return;
+            }
+            Collections.sort(combinedList, (a, b) -> {
+                int dateA = a.messageOwner != null ? a.messageOwner.date : 0;
+                int dateB = b.messageOwner != null ? b.messageOwner.date : 0;
+                return Integer.compare(dateB, dateA);
+            });
+
+            CharSequence[] items = new CharSequence[combinedList.size()];
+            for (int i = 0; i < combinedList.size(); i++) {
+                MessageObject m = combinedList.get(i);
+                String sender = m.getSenderName() != null ? m.getSenderName() : "Bilinmeyen";
+                String time = m.messageOwner != null ? LocaleController.formatDateTime(m.messageOwner.date) : "";
+                String rawText = m.messageOwner != null && m.messageOwner.message != null ? m.messageOwner.message : "";
+                String cleanText = rawText.startsWith("[Silindi] ") ? rawText.substring(10) : (rawText.equals("[Silindi]") ? "(Medya veya boş içerik)" : rawText);
+                items[i] = "[" + time + "] " + sender + ":\n" + (cleanText.length() > 60 ? cleanText.substring(0, 60) + "..." : cleanText);
+            }
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+            builder.setTitle("🗑️ Silinen Mesajlar (" + combinedList.size() + ")");
+            builder.setItems(items, (dialog, which) -> {
+                if (which >= 0 && which < combinedList.size()) {
+                    MessageObject selected = combinedList.get(which);
+                    String sender = selected.getSenderName() != null ? selected.getSenderName() : "Bilinmeyen";
+                    String time = selected.messageOwner != null ? LocaleController.formatDateTime(selected.messageOwner.date) : "";
+                    String rawText = selected.messageOwner != null && selected.messageOwner.message != null ? selected.messageOwner.message : "";
+                    final String cleanText = rawText.startsWith("[Silindi] ") ? rawText.substring(10) : rawText;
+
+                    AlertDialog.Builder detailBuilder = new AlertDialog.Builder(getParentActivity());
+                    detailBuilder.setTitle("🗑️ Silinen Mesaj Detayı");
+                    detailBuilder.setMessage("👤 Gönderen: " + sender + "\n🕒 Tarih: " + time + "\n\n💬 Mesaj:\n" + cleanText);
+                    detailBuilder.setPositiveButton("Metni Kopyala", (d, w) -> {
+                        AndroidUtilities.addToClipboard(cleanText);
+                        BulletinFactory.of(ChatActivity.this).createCopyBulletin("Silinen mesaj kopyalandı").show();
+                    });
+                    detailBuilder.setNeutralButton("Sohbette Göster", (d, w) -> {
+                        scrollToMessageId(selected.getId(), 0, true, 0, true, 0);
+                    });
+                    detailBuilder.setNegativeButton(LocaleController.getString(R.string.Close), null);
+                    showDialog(detailBuilder.create());
+                }
+            });
+            builder.setPositiveButton("Tümünü Kopyala", (dialog, which) -> {
+                StringBuilder all = new StringBuilder();
+                for (MessageObject m : combinedList) {
+                    String sender = m.getSenderName() != null ? m.getSenderName() : "Bilinmeyen";
+                    String time = m.messageOwner != null ? LocaleController.formatDateTime(m.messageOwner.date) : "";
+                    String rawText = m.messageOwner != null && m.messageOwner.message != null ? m.messageOwner.message : "";
+                    String cleanText = rawText.startsWith("[Silindi] ") ? rawText.substring(10) : rawText;
+                    all.append("[").append(time).append("] ").append(sender).append(":\n").append(cleanText).append("\n\n");
+                }
+                AndroidUtilities.addToClipboard(all.toString().trim());
+                BulletinFactory.of(ChatActivity.this).createCopyBulletin("Tüm silinen mesajlar kopyalandı").show();
+            });
+            builder.setNegativeButton(LocaleController.getString(R.string.Close), null);
+            showDialog(builder.create());
+        });
     }
 
     public void showSuggestionOfferForEditMessage(MessageSuggestionParams oldParams) {

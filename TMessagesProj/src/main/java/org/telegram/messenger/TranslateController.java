@@ -1150,7 +1150,7 @@ public class TranslateController extends BaseController {
                         for (int i = 0; i < count; ++i) {
                             callbacks.get(i).run(isTranscription, ids.get(i), TranslateAlert2.preprocess(texts.get(i), translated.get(i)), toLanguage);
                         }
-                    } else if (err != null && "TRANSLATIONS_DISABLED_ALT".equalsIgnoreCase(err.text)) {
+                    } else if (err != null && !"TO_LANG_INVALID".equals(err.text)) {
                         for (int i = 0; i < ids.size(); ++i) {
                             final int id = ids.get(i);
                             final Utilities.Callback4<Boolean, Integer, TLRPC.TL_textWithEntities, String> _callback = callbacks.get(i);

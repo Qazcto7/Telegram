@@ -15344,6 +15344,37 @@ public class MessagesStorage extends BaseController {
         }
     }
 
+    public void getDeletedMessages(long dialogId, Utilities.Callback<ArrayList<MessageObject>> callback) {
+        if (callback == null) {
+            return;
+        }
+        storageQueue.postRunnable(() -> {
+            ArrayList<MessageObject> result = new ArrayList<>();
+            try {
+                SQLiteCursor cursor = database.queryFinalized(String.format(Locale.US, "SELECT data, mid, date FROM messages_v2 WHERE uid = %d ORDER BY date DESC LIMIT 300", dialogId));
+                while (cursor.next()) {
+                    NativeByteBuffer data = cursor.byteBufferValue(0);
+                    if (data != null) {
+                        try {
+                            TLRPC.Message message = TLRPC.Message.TLdeserialize(data, data.readInt32(false), false);
+                            if (message != null && message.message != null && message.message.startsWith("[Silindi]")) {
+                                MessageObject obj = new MessageObject(currentAccount, message, false, false);
+                                obj.deleted = true;
+                                result.add(obj);
+                            }
+                        } catch (Exception ignore) {
+                        }
+                        data.reuse();
+                    }
+                }
+                cursor.dispose();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+            AndroidUtilities.runOnUIThread(() -> callback.run(result));
+        });
+    }
+
     public void updateDialogsWithDeletedMessages(long dialogId, long channelId, ArrayList<Integer> messages, ArrayList<Long> additionalDialogsToUpdate) {
         executeInStorageQueue(() -> updateDialogsWithDeletedMessagesInternal(dialogId, channelId, messages, additionalDialogsToUpdate));
     }
