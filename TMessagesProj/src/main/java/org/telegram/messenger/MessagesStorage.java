@@ -384,6 +384,12 @@ public class MessagesStorage extends BaseController {
                         throw new RuntimeException("malformed");
                     }
                 }
+                try {
+                    database.executeFast("CREATE TABLE IF NOT EXISTS user_name_history(did INTEGER, name TEXT, username TEXT, date INTEGER)").stepThis().dispose();
+                    database.executeFast("CREATE INDEX IF NOT EXISTS idx_user_name_history ON user_name_history(did)").stepThis().dispose();
+                } catch (Exception e) {
+                    FileLog.e(e);
+                }
             }
             databaseCreated = true;
         } catch (Exception e) {
@@ -10807,6 +10813,8 @@ public class MessagesStorage extends BaseController {
             data.reuse();
 
             isForumCacheInvalidate(user.id);
+            String fullName = ContactsController.formatName(user.first_name, user.last_name);
+            recordNameHistoryInternal(user.id, fullName, user.username);
         }
         state.dispose();
     }
@@ -10939,6 +10947,7 @@ public class MessagesStorage extends BaseController {
             data.reuse();
 
             isForumCacheInvalidate(-chat.id);
+            recordNameHistoryInternal(-chat.id, chat.title, chat.username);
         }
         state.dispose();
     }
@@ -15368,6 +15377,77 @@ public class MessagesStorage extends BaseController {
                     }
                 }
                 cursor.dispose();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+            AndroidUtilities.runOnUIThread(() -> callback.run(result));
+        });
+    }
+
+    public static class NameHistoryEntry {
+        public final String name;
+        public final String username;
+        public final long date;
+
+        public NameHistoryEntry(String name, String username, long date) {
+            this.name = name;
+            this.username = username;
+            this.date = date;
+        }
+    }
+
+    private void recordNameHistoryInternal(long did, String name, String username) {
+        if (did == 0 || database == null) {
+            return;
+        }
+        if (name == null) name = "";
+        if (username == null) username = "";
+        if (name.isEmpty() && username.isEmpty()) {
+            return;
+        }
+        try {
+            SQLiteCursor cursor = database.queryFinalized(String.format(Locale.US, "SELECT name, username FROM user_name_history WHERE did = %d ORDER BY date DESC LIMIT 1", did));
+            boolean shouldInsert = true;
+            if (cursor.next()) {
+                String prevName = cursor.stringValue(0);
+                String prevUsername = cursor.stringValue(1);
+                if (TextUtils.equals(prevName, name) && TextUtils.equals(prevUsername, username)) {
+                    shouldInsert = false;
+                }
+            }
+            cursor.dispose();
+            if (shouldInsert) {
+                SQLitePreparedStatement state = database.executeFast("INSERT INTO user_name_history VALUES(?, ?, ?, ?)");
+                state.requery();
+                state.bindLong(1, did);
+                state.bindString(2, name);
+                state.bindString(3, username);
+                state.bindLong(4, System.currentTimeMillis() / 1000);
+                state.step();
+                state.dispose();
+            }
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+    }
+
+    public void getNameHistory(long did, Utilities.Callback<ArrayList<NameHistoryEntry>> callback) {
+        if (callback == null) {
+            return;
+        }
+        storageQueue.postRunnable(() -> {
+            ArrayList<NameHistoryEntry> result = new ArrayList<>();
+            try {
+                if (database != null) {
+                    SQLiteCursor cursor = database.queryFinalized(String.format(Locale.US, "SELECT name, username, date FROM user_name_history WHERE did = %d ORDER BY date DESC", did));
+                    while (cursor.next()) {
+                        String name = cursor.stringValue(0);
+                        String username = cursor.stringValue(1);
+                        long date = cursor.longValue(2);
+                        result.add(new NameHistoryEntry(name, username, date));
+                    }
+                    cursor.dispose();
+                }
             } catch (Exception e) {
                 FileLog.e(e);
             }

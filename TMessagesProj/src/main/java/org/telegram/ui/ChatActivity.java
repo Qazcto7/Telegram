@@ -1250,6 +1250,7 @@ public class ChatActivity extends BaseFragment implements
     public final static int OPTION_OPEN_PROFILE = 104;
     public final static int OPTION_VIEW_EDIT_HISTORY = 199;
     public final static int OPTION_MARK_AS_READ = 201;
+    public final static int OPTION_PEEK_MEDIA = 203;
     public final static int OPTION_FACT_CHECK = 106;
     public final static int OPTION_EDIT_PRICE = 107;
     public final static int OPTION_GIFT = 108;
@@ -33966,6 +33967,21 @@ public class ChatActivity extends BaseFragment implements
                 selectedObjectToEditCaption = null;
                 break;
             }
+            case OPTION_PEEK_MEDIA: {
+                if (selectedObject != null) {
+                    if (selectedObject.isAnyKindOfSticker()) {
+                        StickersAlert alert = new StickersAlert(getParentActivity(), this, selectedObject.getInputStickerSet(), null, bottomChannelButtonsLayout.getVisibility() != View.VISIBLE && (currentChat == null || ChatObject.canSendStickers(currentChat)) ? chatActivityEnterView : null, themeDelegate, false);
+                        showDialog(alert);
+                    } else {
+                        PhotoViewer.getInstance().setParentChatActivity(ChatActivity.this);
+                        PhotoViewer.getInstance().openPhoto(selectedObject, ChatActivity.this, selectedObject.type != 0 ? dialog_id : 0, selectedObject.type != 0 ? mergeDialogId : 0, selectedObject.type != 0 ? getTopicId() : 0, photoViewerProvider);
+                    }
+                }
+                selectedObject = null;
+                selectedObjectGroup = null;
+                selectedObjectToEditCaption = null;
+                break;
+            }
             case OPTION_EDIT_PRICE: {
                 final MessageObject msg = selectedObject;
                 TLRPC.TL_messageMediaPaidMedia paidMedia = (TLRPC.TL_messageMediaPaidMedia) selectedObject.messageOwner.media;
@@ -46597,6 +46613,11 @@ public class ChatActivity extends BaseFragment implements
                     items.add("Mavi Tik / Okundu Gönder");
                     options.add(OPTION_MARK_AS_READ);
                     icons.add(R.drawable.msg_markread);
+                }
+                if (selectedObject != null && (selectedObject.isPhoto() || selectedObject.isVideo() || selectedObject.isGif() || selectedObject.isRoundVideo() || selectedObject.isAnyKindOfSticker() || selectedObject.canPreviewDocument())) {
+                    items.add("👁️ Hızlı Önizleme (Peek)");
+                    options.add(OPTION_PEEK_MEDIA);
+                    icons.add(R.drawable.msg_views);
                 }
                 if (ChatObject.isMonoForum(currentChat) && selectedObject.getGroupId() == 0 && selectedObjectGroup == null && message != null && message.messageOwner != null && message.messageOwner.suggested_post == null && message.messageOwner.action == null) {
                     items.add(LocaleController.getString(R.string.EditOfferAdd));

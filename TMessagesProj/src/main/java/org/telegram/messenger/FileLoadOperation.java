@@ -299,9 +299,10 @@ public class FileLoadOperation {
     }
 
     private void updateParams() {
-        downloadChunkSizeBig = 1024 * 512;
-        maxDownloadRequests = 8;
-        maxDownloadRequestsBig = 8;
+        downloadChunkSizeBig = 1024 * 1024;
+        maxDownloadRequests = 16;
+        maxDownloadRequestsBig = 16;
+        maxDownloadRequestsAnimation = 8;
         maxCdnParts = (int) (FileLoader.DEFAULT_MAX_FILE_SIZE / downloadChunkSizeBig);
     }
 

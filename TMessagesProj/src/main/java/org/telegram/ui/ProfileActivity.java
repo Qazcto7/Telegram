@@ -658,6 +658,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private int noteRow;
     private int clientGuessRow;
     private int idAndDcRow;
+    private int nameHistoryRow;
     private int locationRow;
     private int userInfoRow;
     private int channelInfoRow;
@@ -4665,6 +4666,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 long targetId = userId != 0 ? userId : chatId;
                 AndroidUtilities.addToClipboard(String.valueOf(targetId));
                 BulletinFactory.of(this).createCopyBulletin("ID panoya kopyalandı: " + targetId).show();
+            } else if (position == nameHistoryRow) {
+                showNameHistoryDialog();
             } else {
                 processOnClickOrPress(position, view, x, y);
             }
@@ -10532,6 +10535,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         noteRow = -1;
         clientGuessRow = -1;
         idAndDcRow = -1;
+        nameHistoryRow = -1;
         userInfoRow = -1;
         locationRow = -1;
         channelInfoRow = -1;
@@ -10750,6 +10754,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
                 if (userId != 0) {
                     idAndDcRow = rowCount++;
+                    nameHistoryRow = rowCount++;
                 }
                 if (isBot && user != null && user.bot_has_main_app) {
                     botAppRow = rowCount++;
@@ -10894,6 +10899,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                 }
                 if (currentChat != null) {
                     idAndDcRow = rowCount++;
+                    nameHistoryRow = rowCount++;
                 }
             }
             if (emptyRow < 0 && emptyRow2 < 0) {
@@ -13549,6 +13555,8 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             }
                         }
                         detailCell.setTextAndValue(valueStr, "Telegram ID & Veri Merkezi (DC)", false);
+                    } else if (position == nameHistoryRow) {
+                        detailCell.setTextAndValue("Geçmişi görüntülemek için dokunun", "🕵️‍♂️ İsim & Kullanıcı Adı Geçmişi", false);
                     } else if (position == noteRow) {
                         final TLRPC.UserFull userInfo = getMessagesController().getUserFull(userId);
                         if (userInfo == null) return;
@@ -14364,7 +14372,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             if (position == infoHeaderRow || position == membersHeaderRow || position == settingsSectionRow2 ||
                     position == numberSectionRow || position == helpHeaderRow || position == debugHeaderRow || position == botPermissionsHeader) {
                 return VIEW_TYPE_HEADER;
-            } else if (position == phoneRow || position == locationRow || position == numberRow || position == birthdayRow || position == clientGuessRow || position == idAndDcRow) {
+            } else if (position == phoneRow || position == locationRow || position == numberRow || position == birthdayRow || position == clientGuessRow || position == idAndDcRow || position == nameHistoryRow) {
                 return VIEW_TYPE_TEXT_DETAIL;
             } else if (position == usernameRow || position == setUsernameRow) {
                 return VIEW_TYPE_TEXT_DETAIL_MULTILINE;
@@ -15766,6 +15774,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             put(++pointer, noteRow, sparseIntArray);
             put(++pointer, clientGuessRow, sparseIntArray);
             put(++pointer, idAndDcRow, sparseIntArray);
+            put(++pointer, nameHistoryRow, sparseIntArray);
             put(++pointer, locationRow, sparseIntArray);
             put(++pointer, userInfoRow, sparseIntArray);
             put(++pointer, channelInfoRow, sparseIntArray);
@@ -16297,6 +16306,43 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 //                    }
         }
 
+    }
+
+    private void showNameHistoryDialog() {
+        long targetDialogId = userId != 0 ? userId : -chatId;
+        if (targetDialogId == 0) return;
+        AlertDialog progress = new AlertDialog(getParentActivity(), AlertDialog.ALERT_TYPE_LOADING, resourcesProvider);
+        progress.setMessage(LocaleController.getString(R.string.Loading));
+        progress.show();
+        getMessagesStorage().getNameHistory(targetDialogId, list -> {
+            progress.dismiss();
+            if (getParentActivity() == null) return;
+            AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity(), resourcesProvider);
+            builder.setTitle("İsim ve Kullanıcı Adı Geçmişi");
+            if (list == null || list.isEmpty()) {
+                builder.setMessage("Henüz kaydedilmiş bir isim veya kullanıcı adı değişikliği bulunmuyor.");
+                builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
+            } else {
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < list.size(); i++) {
+                    MessagesStorage.NameHistoryEntry entry = list.get(i);
+                    String dateStr = LocaleController.formatDateTime(entry.date, false);
+                    sb.append("📅 ").append(dateStr).append("\n");
+                    if (!TextUtils.isEmpty(entry.name)) {
+                        sb.append("👤 İsim: ").append(entry.name).append("\n");
+                    }
+                    if (!TextUtils.isEmpty(entry.username)) {
+                        sb.append("🔗 @").append(entry.username.replace("@", "")).append("\n");
+                    }
+                    if (i < list.size() - 1) {
+                        sb.append("───────────────\n");
+                    }
+                }
+                builder.setMessage(sb.toString().trim());
+                builder.setPositiveButton(LocaleController.getString(R.string.OK), null);
+            }
+            showDialog(builder.create());
+        });
     }
 
     private boolean editNotes(View view, int position) {

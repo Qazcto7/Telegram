@@ -757,6 +757,7 @@ public class ChatActivityEnterView extends FrameLayout implements
     private String audioToSendPath;
     private MessageObject audioToSendMessageObject;
     private VideoEditedInfo videoToSendMessageObject;
+    private boolean isSendingSticker;
 
     protected boolean topViewShowed;
 
@@ -3035,14 +3036,14 @@ public class ChatActivityEnterView extends FrameLayout implements
                                     });
                                     return true;
                                 }
-                                MediaController.getInstance().stopRecording(isInScheduleMode() ? 3 : 1, true, 0, voiceOnce, 0);
+                                MediaController.getInstance().stopRecording(isInScheduleMode() ? 3 : 2, true, 0, voiceOnce, 0);
                                 delegate.needStartRecordAudio(0);
                             }
                             recordingAudioVideo = false;
                             messageTransitionIsRunning = false;
                             AndroidUtilities.runOnUIThread(moveToSendStateRunnable = () -> {
                                 moveToSendStateRunnable = null;
-                                updateRecordInterface(RECORD_STATE_SENDING, true);
+                                updateRecordInterface(RECORD_STATE_PREPARING, true);
                             }, 200);
                         }
                         getParent().requestDisallowInterceptTouchEvent(true);
@@ -3154,13 +3155,13 @@ public class ChatActivityEnterView extends FrameLayout implements
                                     AlertsCreator.createScheduleDatePickerDialog(parentActivity, parentFragment.getDialogId(), (notify, scheduleDate, scheduleRepeatPeriod) -> MediaController.getInstance().stopRecording(1, notify, scheduleDate, false, 0), () -> MediaController.getInstance().stopRecording(0, false, 0, false, 0), resourcesProvider);
                                 }
                                 delegate.needStartRecordAudio(0);
-                                MediaController.getInstance().stopRecording(isInScheduleMode() ? 3 : 1, true, 0, voiceOnce, 0);
+                                MediaController.getInstance().stopRecording(isInScheduleMode() ? 3 : 2, true, 0, voiceOnce, 0);
                             }
                             recordingAudioVideo = false;
                             messageTransitionIsRunning = false;
                             AndroidUtilities.runOnUIThread(moveToSendStateRunnable = () -> {
                                 moveToSendStateRunnable = null;
-                                updateRecordInterface(RECORD_STATE_SENDING, true);
+                                updateRecordInterface(RECORD_STATE_PREPARING, true);
                             }, shouldDrawBackground ? 500 : 0);
                         }
                     }
@@ -7500,7 +7501,21 @@ public class ChatActivityEnterView extends FrameLayout implements
     }
 
     protected boolean showConfirmAlert(Runnable onConfirmed) {
-        return false;
+        if (parentActivity == null || onConfirmed == null) {
+            return false;
+        }
+        if (!isSendingSticker && (messageEditText != null && messageEditText.length() > 0 && videoToSendMessageObject == null && audioToSend == null)) {
+            return false;
+        }
+        AlertDialog.Builder builder = new AlertDialog.Builder(parentActivity, resourcesProvider);
+        builder.setTitle(LocaleController.getString(R.string.AppName));
+        builder.setMessage(isSendingSticker ? "Bu çıkartmayı göndermek istediğinize emin misiniz?" : "Bu medyayı göndermek istediğinize emin misiniz?");
+        builder.setPositiveButton(LocaleController.getString(R.string.Send), (dialog, which) -> {
+            onConfirmed.run();
+        });
+        builder.setNegativeButton(LocaleController.getString(R.string.Cancel), null);
+        builder.show();
+        return true;
     }
 
     public static boolean checkPremiumAnimatedEmoji(int currentAccount, long dialogId, BaseFragment parentFragment, FrameLayout container, CharSequence message) {
@@ -12390,8 +12405,13 @@ public class ChatActivityEnterView extends FrameLayout implements
                                 delegate.onMessageSend(null, notify, scheduleDate, 0, 0);
                             }
                         };
-                        if (!showConfirmAlert(runnable)) {
-                            runnable.run();
+                        isSendingSticker = true;
+                        try {
+                            if (!showConfirmAlert(runnable)) {
+                                runnable.run();
+                            }
+                        } finally {
+                            isSendingSticker = false;
                         }
                     });
                 }
@@ -12664,8 +12684,13 @@ public class ChatActivityEnterView extends FrameLayout implements
                     }
                     MediaDataController.getInstance(currentAccount).addRecentSticker(MediaDataController.TYPE_IMAGE, parent, sticker, (int) (System.currentTimeMillis() / 1000), false);
                 };
-                if (!showConfirmAlert(runnable)) {
-                    runnable.run();
+                isSendingSticker = true;
+                try {
+                    if (!showConfirmAlert(runnable)) {
+                        runnable.run();
+                    }
+                } finally {
+                    isSendingSticker = false;
                 }
             });
         }
