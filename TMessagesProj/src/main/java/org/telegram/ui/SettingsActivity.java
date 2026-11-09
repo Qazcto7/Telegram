@@ -974,7 +974,7 @@ public class SettingsActivity extends BaseFragment implements NotificationCenter
                 break;
 
             case 99:
-                openDebugMenu();
+                presentFragment(new DebugSettingsActivity());
                 break;
             case 20:
                 ProfileActivity.sendLogs(getParentActivity(), false);
